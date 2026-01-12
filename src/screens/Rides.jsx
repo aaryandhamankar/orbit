@@ -1,77 +1,67 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, Phone, ArrowRight, Clock, MapPin } from 'lucide-react';
-import Button from '../components/Button';
+import { MessageCircle, Clock, MapPin, User } from 'lucide-react';
+import Button, { playClickSound } from '../components/Button';
+import Chat from './Chat';
+import RideDetails from './RideDetails';
 
-const Rides = ({ userData }) => {
-    const [activeTab, setActiveTab] = useState('upcoming');
+const Rides = ({ userData, pastRides, upcomingRide, onViewRideDetails }) => {
+    const [activeTab, setActiveTab] = useState(upcomingRide ? 'upcoming' : 'history');
+
+    // Effect to switch to history if upcomingRide disappears (completion)
+    // Note: This might auto-switch if user cancels too. Acceptable for now.
+    // We only want to auto-switch if we were on 'upcoming' and it became null.
+    // Simple approach: logic in render or initial state is often enough, 
+    // but if we navigate here FROM home after completion, upcomingRide is null, so initial state 'history' is correct.
+
+    // Auto-switch to 'past' if we have a very recent ride (simple heuristic: if first ride is "Today")
+    // Or just let user navigate. For now, let's keep it simple.
+    // Actually, user asked to "open in past tab". 
+    // We can do this with a useEffect if specific logic is needed, 
+    // but better to just default to 'upcoming' unless specified. 
+    // Let's stick to props for data.
+    const [subScreen, setSubScreen] = useState(null); // 'chat' | 'details' | null
+
+    if (subScreen === 'chat') return <Chat onBack={() => setSubScreen(null)} />;
+    if (subScreen === 'details') return <RideDetails onBack={() => setSubScreen(null)} userData={userData} />;
 
     // Dynamic upcoming ride based on user data
-    const upcomingRides = [
-        {
-            id: 1,
-            driver: 'Rohan Gupta',
-            model: 'Swift Dzire',
-            time: userData?.time || '09:15 AM',
-            from: userData?.from || 'Koramangala',
-            to: userData?.to || 'PES University',
-            cost: 45,
-            seatsLeft: 1
-        }
-    ];
 
-    const pastRides = [
-        {
-            id: 2,
-            date: 'Yesterday',
-            from: 'Indiranagar',
-            to: 'PES University',
-            cost: 60,
-            saved: 40
-        },
-        {
-            id: 3,
-            date: 'Mon, 12 Oct',
-            from: 'Koramangala',
-            to: 'MG Road',
-            cost: 55,
-            saved: 35
-        },
-        {
-            id: 4,
-            date: 'Fri, 9 Oct',
-            from: 'HSR Layout',
-            to: 'JP Nagar',
-            cost: 45,
-            saved: 20
-        }
-    ];
+
+
 
     return (
-        <div style={{ paddingTop: '20px' }}>
-            <h1 style={{ fontSize: '2rem', marginBottom: '20px' }}>Your Rides</h1>
+        <div style={{ paddingBottom: '20px' }}>
+            <AnimatePresence>
+                {subScreen === 'chat' && <Chat onBack={() => setSubScreen(null)} />}
+                {subScreen === 'details' && <RideDetails onBack={() => setSubScreen(null)} userData={userData} />}
+            </AnimatePresence>
+
+            <h1 style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '20px' }}>Your Rides</h1>
 
             {/* Tabs */}
             <div style={{
-                display: 'flex',
-                background: 'rgba(255,255,255,0.05)',
-                padding: '4px',
-                borderRadius: '16px',
-                marginBottom: '24px'
+                display: 'flex', background: 'var(--color-bg-card)',
+                padding: '4px', borderRadius: '16px', marginBottom: '24px'
             }}>
-                {['upcoming', 'active', 'past'].map(tab => (
+                {['upcoming', 'history'].map((tab) => (
                     <button
                         key={tab}
-                        onClick={() => setActiveTab(tab)}
+                        onClick={() => {
+                            playClickSound('tap');
+                            setActiveTab(tab);
+                        }}
                         style={{
                             flex: 1,
-                            padding: '10px',
+                            padding: '12px',
                             borderRadius: '12px',
-                            background: activeTab === tab ? 'rgba(255,255,255,0.1)' : 'transparent',
-                            color: activeTab === tab ? '#fff' : 'var(--color-text-secondary)',
-                            fontWeight: '600',
+                            background: activeTab === tab ? 'var(--color-bg-deep)' : 'transparent',
+                            color: activeTab === tab ? 'var(--color-brand-primary)' : 'var(--color-text-secondary)',
+                            fontWeight: activeTab === tab ? '600' : '500',
+                            border: 'none',
                             textTransform: 'capitalize',
-                            transition: 'all 0.3s ease'
+                            transition: 'all 0.2s ease',
+                            boxShadow: activeTab === tab ? '0 2px 10px rgba(0,0,0,0.2)' : 'none'
                         }}
                     >
                         {tab}
@@ -79,6 +69,7 @@ const Rides = ({ userData }) => {
                 ))}
             </div>
 
+            {/* Content */}
             <AnimatePresence mode="wait">
                 <motion.div
                     key={activeTab}
@@ -87,111 +78,120 @@ const Rides = ({ userData }) => {
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.2 }}
                 >
-                    {activeTab === 'upcoming' && (
-                        <div style={{ display: 'grid', gap: '20px' }}>
-                            {upcomingRides.map(ride => (
+                    {activeTab === 'upcoming' ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            {upcomingRide ? (
                                 <motion.div
-                                    key={ride.id}
-                                    whileHover={{
-                                        y: -4,
-                                        borderColor: 'rgba(217, 164, 88, 0.4)',
-                                        backdropFilter: 'blur(25px)'
-                                    }}
+                                    key={upcomingRide.id}
                                     className="glass-panel"
-                                    style={{
-                                        padding: '20px', borderRadius: '24px',
-                                        border: '1px solid rgba(255, 255, 255, 0.05)',
-                                        transition: 'border-color 0.3s ease'
-                                    }}
+                                    style={{ padding: '20px', borderRadius: '20px', position: 'relative', overflow: 'hidden' }}
                                 >
+                                    <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: 'var(--color-brand-primary)' }}></div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
                                         <div>
-                                            <h3 style={{ fontSize: '1.1rem' }}>{ride.driver}</h3>
-                                            <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>{ride.model}</p>
+                                            <p style={{ fontSize: '1.2rem', fontWeight: '700' }}>{upcomingRide.time}</p>
+                                            <p style={{ color: 'var(--color-text-secondary)' }}>Today</p>
                                         </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                            <p style={{ fontWeight: '700', color: 'var(--color-brand-primary)' }}>{ride.time}</p>
-                                            <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>• Today</span>
+                                        <div style={{
+                                            background: 'rgba(217, 164, 88, 0.1)',
+                                            padding: '6px 12px', borderRadius: '12px',
+                                            height: 'fit-content'
+                                        }}>
+                                            <span style={{ color: 'var(--color-brand-primary)', fontWeight: '600', fontSize: '0.85rem' }}>UPCOMING</span>
                                         </div>
                                     </div>
 
-                                    {/* Route Line */}
-                                    <div style={{ position: 'relative', paddingLeft: '20px', marginBottom: '20px' }}>
-                                        <div style={{ position: 'absolute', left: '4px', top: '5px', bottom: '5px', width: '2px', background: 'rgba(255,255,255,0.1)' }}></div>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                            <div style={{ position: 'relative' }}>
-                                                <div style={{ position: 'absolute', left: '-20px', top: '5px', width: '10px', height: '10px', borderRadius: '50%', background: 'var(--color-brand-secondary)' }}></div>
-                                                <p style={{ fontSize: '0.9rem' }}>{ride.from}</p>
+                                    {/* Detailed Info (Driver/Car) */}
+                                    <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--color-bg-deep)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--color-border)' }}>
+                                                <User size={20} color="var(--color-text-primary)" />
                                             </div>
-                                            <div style={{ paddingLeft: '20px', position: 'relative' }}>
-                                                <div style={{ position: 'absolute', left: '-20px', top: '5px', width: '10px', height: '10px', borderRadius: '50%', border: '2px solid var(--color-brand-primary)', background: '#000' }}></div>
-                                                <p style={{ fontSize: '0.9rem' }}>{ride.to}</p>
+                                            <div>
+                                                <p style={{ fontWeight: '600', fontSize: '1rem' }}>{upcomingRide.driver}</p>
+                                                <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>{upcomingRide.model}</p>
                                             </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Route */}           <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '4px' }}>
+                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--color-brand-secondary)' }}></div>
+                                            <div style={{ width: '1px', height: '25px', background: 'rgba(255,255,255,0.1)', margin: '4px 0' }}></div>
+                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', border: '2px solid var(--color-brand-primary)' }}></div>
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <p style={{ fontSize: '0.95rem', fontWeight: '500', marginBottom: '12px' }}>{upcomingRide.from}</p>
+                                            <p style={{ fontSize: '0.95rem', fontWeight: '500' }}>{upcomingRide.to}</p>
                                         </div>
                                     </div>
 
                                     <div style={{ display: 'flex', gap: '10px' }}>
-                                        <Button variant="secondary" style={{ flex: 1, fontSize: '0.9rem', padding: '12px' }}>
+                                        <Button
+                                            variant="secondary"
+                                            style={{ flex: 1, fontSize: '0.9rem', padding: '12px' }}
+                                            onClick={() => {
+                                                playClickSound('tap');
+                                                setSubScreen('chat');
+                                            }}
+                                        >
                                             <MessageCircle size={18} /> Chat
                                         </Button>
-                                        <Button variant="primary" style={{ flex: 1, fontSize: '0.9rem', padding: '12px' }}>
+                                        <Button
+                                            variant="primary"
+                                            sound="success"
+                                            style={{ flex: 1, fontSize: '0.9rem', padding: '12px' }}
+                                            onClick={() => {
+                                                playClickSound('tap');
+                                                if (onViewRideDetails) onViewRideDetails();
+                                            }}
+                                        >
                                             Details
                                         </Button>
                                     </div>
                                 </motion.div>
-                            ))}
+                            ) : (
+                                <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--color-text-secondary)' }}>
+                                    <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🪐</div>
+                                    <p style={{ fontSize: '1.1rem', fontWeight: '500' }}>Gravity's stable for now.</p>
+                                    <p style={{ fontSize: '0.9rem', opacity: 0.7, marginTop: '8px' }}>No upcoming rides scheduled.</p>
+                                </div>
+                            )}
                         </div>
-                    )}
-
-                    {activeTab === 'active' && (
-                        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--color-text-secondary)' }}>
-                            <div style={{
-                                width: '80px', height: '80px', margin: '0 auto 20px auto',
-                                borderRadius: '50%', border: '1px dashed rgba(255,255,255,0.2)',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center'
-                            }}>
-                                <Clock size={32} />
-                            </div>
-                            <p>No active rides right now.</p>
-                        </div>
-                    )}
-
-                    {activeTab === 'past' && (
-                        <div style={{ display: 'grid', gap: '16px' }}>
-                            {pastRides.map(ride => (
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            {pastRides && pastRides.length > 0 ? pastRides.map((ride) => (
                                 <motion.div
                                     key={ride.id}
-                                    whileHover={{
-                                        y: -4,
-                                        borderColor: 'rgba(217, 164, 88, 0.4)',
-                                        backdropFilter: 'blur(25px)'
-                                    }}
                                     className="glass-panel"
-                                    style={{
-                                        padding: '16px 20px', borderRadius: '20px',
-                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                        border: '1px solid rgba(255, 255, 255, 0.05)',
-                                        transition: 'border-color 0.3s ease'
-                                    }}
+                                    style={{ padding: '20px', borderRadius: '20px', opacity: 0.8 }}
                                 >
-                                    <div>
-                                        <p style={{ fontWeight: '600', marginBottom: '4px' }}>{ride.date}</p>
-                                        <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem' }}>₹{ride.cost} Paid</p>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                                        <p style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)' }}>{ride.date}</p>
+                                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                            {ride.saved > 0 && <span style={{ color: '#4ade80', fontSize: '0.85rem' }}>Saved ₹{ride.saved}</span>}
+                                            <p style={{ fontWeight: '700', color: 'var(--color-brand-primary)' }}>₹{ride.cost}</p>
+                                        </div>
                                     </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <span style={{
-                                            background: 'rgba(230, 184, 112, 0.1)',
-                                            color: '#E6B870',
-                                            padding: '4px 8px',
-                                            borderRadius: '8px',
-                                            fontSize: '0.8rem',
-                                            fontWeight: '600'
-                                        }}>
-                                            Saved ₹{ride.saved}
-                                        </span>
+
+                                    {/* Route */}
+                                    <div style={{ display: 'flex', gap: '12px' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '4px' }}>
+                                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#666' }}></div>
+                                            <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.05)', margin: '4px 0' }}></div>
+                                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', border: '1px solid #666' }}></div>
+                                        </div>
+                                        <div>
+                                            <p style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)', marginBottom: '12px' }}>{ride.from}</p>
+                                            <p style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)' }}>{ride.to}</p>
+                                        </div>
                                     </div>
                                 </motion.div>
-                            ))}
+                            )) : (
+                                <div style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-secondary)' }}>
+                                    No history yet.
+                                </div>
+                            )}
                         </div>
                     )}
                 </motion.div>

@@ -1,168 +1,267 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronLeft, ShieldCheck, MapPin, Clock, Car, User, Users, Lock } from 'lucide-react';
-import Button from '../components/Button';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence, useMotionValue, animate, useTransform } from 'framer-motion';
+import { ChevronRight, ChevronLeft, ShieldCheck, MapPin, Clock, Car, User, Users, Lock, Sun, Moon } from 'lucide-react';
+import Button, { playClickSound } from '../components/Button';
 import Input from '../components/Input';
 import Select from '../components/Select';
 
 // Defined outside to prevent re-renders losing focus
-const Step1_Welcome = ({ nextStep }) => (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '40px 0' }}>
+const Step1_Welcome = ({ nextStep, toggleTheme, currentTheme }) => {
+    // Physics-based Orbit Interaction
+    const orbitRotation = useMotionValue(0);
+    const innerOrbitRotation = useTransform(orbitRotation, r => r * -1.2); // Inner moves faster & opposite
 
-        {/* TOP: Brand Header */}
-        <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            style={{ textAlign: 'center', position: 'relative', zIndex: 1, marginTop: '20px' }}
-        >
-            <h1 style={{
-                fontSize: '4.5rem',
-                fontWeight: '900',
-                letterSpacing: '8px',
-                lineHeight: 1,
-                background: 'var(--gradient-text)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                marginBottom: '12px'
-            }}>
-                ORBIT
-            </h1>
-            <p style={{
-                color: 'var(--color-brand-primary)',
-                fontSize: '1.25rem',
-                fontWeight: '600',
-                letterSpacing: '3px',
-                textTransform: 'uppercase',
-                opacity: 0.9
-            }}>
-                Commute Effortlessly
-            </p>
-        </motion.div>
+    useEffect(() => {
+        // Idle Animation: Subtle continuous rotation
+        const controls = animate(orbitRotation, 360, {
+            ease: "linear",
+            duration: 30, // 30s per revolution (Calm)
+            repeat: Infinity,
+            repeatType: "loop" // Ensure it loops
+        });
 
-        {/* MIDDLE: Floating Logo System */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-            <motion.div
-                animate={{
-                    y: [0, -15, 0],
-                    rotate: [-3, 3, -3]
-                }}
-                transition={{
-                    duration: 6,
-                    repeat: Infinity,
-                    ease: "easeInOut"
+        return () => controls.stop();
+    }, [orbitRotation]);
+
+    const handlePanStart = () => {
+        animate(orbitRotation).stop(); // Pause on interaction
+        if (navigator.vibrate) navigator.vibrate(5); // Tactile feedback
+    };
+
+    const handlePan = (_, info) => {
+        // "Drag" the orbit
+        const current = orbitRotation.get();
+        orbitRotation.set(current + info.delta.x * 0.2); // 0.2 friction for weight
+    };
+
+    const handlePanEnd = () => {
+        // "Subtle Resume" - Smoothly ramp back up to speed
+        const current = orbitRotation.get();
+        // Determine nearest "forward" direction or just continue
+        animate(orbitRotation, current + 360, {
+            ease: "linear",
+            duration: 30,
+            repeat: Infinity,
+            repeatType: "loop"
+        });
+    };
+
+    return (
+        <div style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '40px 0', position: 'relative' }}>
+
+            {/* TOP: Theme Toggle */}
+            <button
+                onClick={() => {
+                    playClickSound('tap');
+                    toggleTheme();
                 }}
                 style={{
-                    position: 'relative',
-                    width: '300px',
-                    height: '300px',
+                    position: 'absolute',
+                    top: '20px',
+                    right: '25px',
+                    background: 'var(--color-bg-card)',
+                    border: 'var(--glass-border)',
+                    borderRadius: '50%',
+                    width: '40px',
+                    height: '40px',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    zIndex: 50,
+                    backdropFilter: 'blur(10px)',
+                    boxShadow: 'var(--glass-shadow)'
                 }}
             >
-                {/* Background Orbit Rings (Locked to Planet) */}
-                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '100%', height: '100%', pointerEvents: 'none' }}>
-                    {/* Outer Orbit */}
+                <AnimatePresence mode="wait" initial={false}>
                     <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-                        style={{
-                            position: 'absolute',
-                            top: '-10%',
-                            left: '-10%',
-                            width: '120%',
-                            height: '120%',
-                            borderRadius: '50%',
-                            border: '1px solid rgba(230, 184, 112, 0.08)',
-                        }}
+                        key={currentTheme}
+                        initial={{ y: -20, opacity: 0, rotate: -90 }}
+                        animate={{ y: 0, opacity: 1, rotate: 0 }}
+                        exit={{ y: 20, opacity: 0, rotate: 90 }}
+                        transition={{ duration: 0.2 }}
                     >
-                        {/* Particle 1 */}
-                        <div style={{
-                            position: 'absolute', top: '14%', left: '85%', width: '6px', height: '6px', // Adjusted position
-                            background: 'var(--color-brand-primary)', borderRadius: '50%',
-                            boxShadow: '0 0 10px var(--color-brand-primary)'
-                        }} />
+                        {currentTheme === 'dark' ? (
+                            <Moon size={20} color="var(--color-text-primary)" />
+                        ) : (
+                            <Sun size={20} color="var(--color-text-primary)" />
+                        )}
                     </motion.div>
+                </AnimatePresence>
+            </button>
 
-                    {/* Inner Orbit */}
-                    <motion.div
-                        animate={{ rotate: -360 }}
-                        transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-                        style={{
-                            position: 'absolute',
-                            top: '0%',
-                            left: '0%',
-                            width: '100%',
-                            height: '100%',
-                            borderRadius: '50%',
-                            border: '1px solid rgba(209, 109, 90, 0.08)',
-                        }}
-                    >
-                        {/* Particle 2 */}
-                        <div style={{
-                            position: 'absolute', bottom: '15%', right: '10%', width: '4px', height: '4px',
-                            background: 'var(--color-brand-secondary)', borderRadius: '50%',
-                            boxShadow: '0 0 10px var(--color-brand-secondary)'
-                        }} />
-                    </motion.div>
-                </div>
-
-                {/* Main Logo & Glow */}
-                <div style={{
-                    position: 'relative',
-                    width: '100%',
-                    height: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
+            {/* TOP: Brand Header */}
+            <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                style={{ textAlign: 'center', position: 'relative', zIndex: 1, marginTop: '20px' }}
+            >
+                <h1 style={{
+                    fontSize: '4.5rem',
+                    fontWeight: '900',
+                    letterSpacing: '8px',
+                    lineHeight: 1,
+                    background: 'var(--gradient-text)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    marginBottom: '12px'
                 }}>
+                    ORBIT
+                </h1>
+                <p style={{
+                    color: 'var(--color-brand-primary)',
+                    fontSize: '1.25rem',
+                    fontWeight: '600',
+                    letterSpacing: '3px',
+                    textTransform: 'uppercase',
+                    opacity: 0.9
+                }}>
+                    Commute Effortlessly
+                </p>
+            </motion.div>
+
+            {/* MIDDLE: Floating Logo System - INTERACTIVE */}
+            <div
+                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
+            >
+                <motion.div
+                    // Draggable Area Wrapper
+                    onPanStart={handlePanStart}
+                    onPan={handlePan}
+                    onPanEnd={handlePanEnd}
+                    style={{
+                        position: 'relative',
+                        width: '300px',
+                        height: '300px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'grab',
+                        touchAction: 'none' // Important for pan
+                    }}
+                    whileTap={{ cursor: 'grabbing', scale: 0.98 }}
+                    animate={{
+                        y: [0, -15, 0] // Floating effect separate from rotation
+                    }}
+                    transition={{
+                        duration: 6,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                    }}
+                >
+                    {/* Background Orbit Rings */}
+                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '100%', height: '100%', pointerEvents: 'none' }}>
+
+                        {/* Outer Orbit - Controlled by MotionValue */}
+                        <motion.div
+                            style={{
+                                position: 'absolute',
+                                top: '-10%',
+                                left: '-10%',
+                                width: '120%',
+                                height: '120%',
+                                borderRadius: '50%',
+                                border: currentTheme === 'light'
+                                    ? '1px solid rgba(217, 164, 88, 0.4)'
+                                    : '1px solid rgba(230, 184, 112, 0.08)',
+                                rotate: orbitRotation
+                            }}
+                        >
+                            {/* Particle 1 */}
+                            <div style={{
+                                position: 'absolute',
+                                top: '14.65%', left: '85.35%',
+                                transform: 'translate(-50%, -50%)',
+                                width: '9px', height: '9px',
+                                background: 'var(--color-brand-primary)', borderRadius: '50%',
+                                boxShadow: '0 0 10px var(--color-brand-primary)',
+                            }} />
+                        </motion.div>
+
+                        {/* Inner Orbit - Reverse & Faster */}
+                        <motion.div
+                            style={{
+                                position: 'absolute',
+                                top: '0%',
+                                left: '0%',
+                                width: '100%',
+                                height: '100%',
+                                borderRadius: '50%',
+                                border: currentTheme === 'light'
+                                    ? '1px solid rgba(209, 109, 90, 0.4)'
+                                    : '1px solid rgba(209, 109, 90, 0.08)',
+                                rotate: innerOrbitRotation
+                            }}
+                        >
+                            {/* Particle 2 */}
+                            <div style={{
+                                position: 'absolute',
+                                top: '85.35%', left: '85.35%',
+                                transform: 'translate(-50%, -50%)',
+                                width: '7px', height: '7px',
+                                background: 'var(--color-brand-secondary)', borderRadius: '50%',
+                                boxShadow: '0 0 10px var(--color-brand-secondary)',
+                            }} />
+                        </motion.div>
+                    </div>
+
+                    {/* Main Logo & Glow */}
                     <div style={{
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        width: '220px',
-                        height: '220px',
-                        background: 'radial-gradient(circle, rgba(217, 164, 88, 0.3) 0%, transparent 70%)',
-                        filter: 'blur(40px)',
-                        zIndex: -1
-                    }}></div>
-                    <img
-                        src="/orbit-logo-large.png"
-                        alt="Orbit Logo"
-                        style={{
-                            width: '180px',
-                            objectFit: 'contain',
-                            filter: 'drop-shadow(0 0 25px rgba(217, 164, 88, 0.6))'
-                        }}
-                    />
-                </div>
+                        position: 'relative',
+                        width: '100%',
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}>
+                        <div style={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            width: '220px',
+                            height: '220px',
+                            background: 'radial-gradient(circle, rgba(217, 164, 88, 0.3) 0%, transparent 70%)',
+                            filter: 'blur(40px)',
+                            zIndex: -1
+                        }}></div>
+                        <img
+                            src="/orbit-logo-large.png"
+                            alt="Orbit Logo"
+                            style={{
+                                width: '180px',
+                                objectFit: 'contain',
+                                filter: 'drop-shadow(0 0 25px rgba(217, 164, 88, 0.6))'
+                            }}
+                        />
+                    </div>
+                </motion.div>
+            </div>
+
+            {/* BOTTOM: Action Area */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                style={{ textAlign: 'left', width: '100%', paddingLeft: '40px', paddingRight: '40px', paddingBottom: '20px' }}
+            >
+                <h2 style={{ fontSize: '2rem', lineHeight: '1.2', marginBottom: '16px' }}>
+                    Move smarter.<br />
+                    <span style={{
+                        color: 'var(--color-brand-primary)',
+                    }}>Together.</span>
+                </h2>
+                <p style={{ fontSize: '1.1rem', color: 'var(--color-text-secondary)', marginBottom: '40px', maxWidth: '300px' }}>
+                    Orbit connects you with students from your campus heading the same way.
+                </p>
+                <Button onClick={nextStep} variant="primary">
+                    Get Started <ChevronRight size={20} />
+                </Button>
             </motion.div>
         </div>
-
-        {/* BOTTOM: Action Area */}
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            style={{ textAlign: 'left', width: '100%', paddingLeft: '40px', paddingRight: '40px', paddingBottom: '20px' }}
-        >
-            <h2 style={{ fontSize: '2rem', lineHeight: '1.2', marginBottom: '16px' }}>
-                Move smarter.<br />
-                <span style={{
-                    color: 'var(--color-brand-primary)',
-                }}>Together.</span>
-            </h2>
-            <p style={{ fontSize: '1.1rem', color: 'var(--color-text-secondary)', marginBottom: '40px', maxWidth: '300px' }}>
-                Orbit connects you with students from your campus heading the same way.
-            </p>
-            <Button onClick={nextStep} variant="primary">
-                Get Started <ChevronRight size={20} />
-            </Button>
-        </motion.div>
-    </div>
-);
+    );
+};
 
 const Step2_Verification = ({ nextStep, prevStep, formData, updateFormData }) => {
     const [status, setStatus] = useState('idle'); // idle, verifying, success
@@ -487,7 +586,10 @@ const Step4_Mode = ({ handleComplete, prevStep }) => {
                     variants={variants}
                     initial="idle"
                     animate={role === 'driver' ? 'selected' : (role === 'rider' ? 'unselected' : 'idle')}
-                    onClick={() => setRole('driver')}
+                    onClick={() => {
+                        playClickSound('tap');
+                        setRole('driver');
+                    }}
                     whileHover={{ scale: role ? 1.3 : 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     style={{
@@ -517,7 +619,10 @@ const Step4_Mode = ({ handleComplete, prevStep }) => {
                     variants={variants}
                     initial="idle"
                     animate={role === 'rider' ? 'selected' : (role === 'driver' ? 'unselected' : 'idle')}
-                    onClick={() => setRole('rider')}
+                    onClick={() => {
+                        playClickSound('tap');
+                        setRole('rider');
+                    }}
                     whileHover={{ scale: role ? 1.3 : 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     style={{
@@ -555,7 +660,7 @@ const Step4_Mode = ({ handleComplete, prevStep }) => {
     );
 };
 
-const Onboarding = ({ onComplete }) => {
+const Onboarding = ({ onComplete, toggleTheme, currentTheme }) => {
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
         name: '',
@@ -589,7 +694,7 @@ const Onboarding = ({ onComplete }) => {
                     transition={{ duration: 0.3 }}
                     style={{ height: '100%' }}
                 >
-                    {step === 1 && <Step1_Welcome nextStep={nextStep} />}
+                    {step === 1 && <Step1_Welcome nextStep={nextStep} toggleTheme={toggleTheme} currentTheme={currentTheme} />}
                     {step === 2 && <Step2_Verification nextStep={nextStep} prevStep={prevStep} formData={formData} updateFormData={updateFormData} />}
                     {step === 3 && <Step3_Setup nextStep={nextStep} prevStep={prevStep} formData={formData} updateFormData={updateFormData} />}
                     {step === 4 && <Step4_Mode handleComplete={handleCompleteFlow} prevStep={prevStep} />}

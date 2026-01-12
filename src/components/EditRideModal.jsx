@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, MapPin, Clock, Users, DollarSign } from 'lucide-react';
+import { X, MapPin, Clock, Users, IndianRupee } from 'lucide-react';
 import Button from './Button';
 import Input from './Input';
 import Select from './Select';
@@ -59,84 +59,96 @@ const EditRideModal = ({ isOpen, onClose, userData, onSave }) => {
 
                     {/* Modal */}
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.9, y: 50 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.9, y: 50 }}
-                        className="glass-panel"
                         style={{
                             position: 'fixed',
-                            top: '5vh',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            width: '90%',
-                            maxWidth: '400px',
-                            maxHeight: '85vh',
-                            overflowY: 'auto',
-                            padding: '24px',
-                            borderRadius: '24px',
-                            zIndex: 1001
+                            inset: 0,
+                            zIndex: 1001,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '20px',
+                            pointerEvents: 'none' // Let clicks pass through to backdrop if clicked outside (handled by backdrop click)
                         }}
                     >
-                        {/* Header */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                            <h2 style={{ fontSize: '1.5rem', fontWeight: '700' }}>Edit Ride</h2>
-                            <button onClick={onClose} style={{ padding: '8px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }}>
-                                <X size={20} />
-                            </button>
-                        </div>
+                        {/* Modal Content */}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 50 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 50 }}
+                            className="glass-panel"
+                            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking modal
+                            style={{
+                                width: '100%',
+                                maxWidth: '400px',
+                                maxHeight: '85vh',
+                                overflowY: 'auto',
+                                padding: '24px',
+                                borderRadius: '24px',
+                                pointerEvents: 'auto', // Re-enable clicks
+                                position: 'relative' // Reset fixed
+                            }}
+                        >
+                            {/* Header */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                                <h2 style={{ fontSize: '1.5rem', fontWeight: '700' }}>Edit Ride</h2>
+                                <button onClick={onClose} style={{ padding: '8px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }}>
+                                    <X size={20} />
+                                </button>
+                            </div>
 
-                        {/* Form */}
-                        <Input
-                            label="From"
-                            placeholder="Starting location"
-                            icon={MapPin}
-                            value={formData.from}
-                            onChange={(e) => updateField('from', e.target.value)}
-                        />
-                        <Input
-                            label="To"
-                            placeholder="Destination"
-                            icon={MapPin}
-                            value={formData.to}
-                            onChange={(e) => updateField('to', e.target.value)}
-                        />
-                        <Select
-                            label="Departure Time"
-                            placeholder="Select Time"
-                            icon={Clock}
-                            value={formData.time}
-                            onChange={(e) => updateField('time', e.target.value)}
-                            options={[
-                                "08:00 AM", "08:30 AM", "09:00 AM", "09:30 AM",
-                                "10:00 AM", "10:30 AM", "11:00 AM"
-                            ]}
-                        />
-                        <Select
-                            label="Seats Available"
-                            placeholder="Select Seats"
-                            icon={Users}
-                            value={formData.seats}
-                            onChange={(e) => updateField('seats', e.target.value)}
-                            options={["1 Seat", "2 Seats", "3 Seats", "4 Seats", "5 Seats", "6 Seats", "7 Seats"]}
-                        />
-                        <Input
-                            label="Price per Seat (₹)"
-                            placeholder="45"
-                            type="number"
-                            icon={DollarSign}
-                            value={formData.price}
-                            onChange={(e) => updateField('price', e.target.value)}
-                        />
+                            {/* Form */}
+                            <Input
+                                label="From"
+                                placeholder="Starting location"
+                                icon={MapPin}
+                                value={formData.from}
+                                onChange={(e) => updateField('from', e.target.value)}
+                            />
+                            <Input
+                                label="To"
+                                placeholder="Destination"
+                                icon={MapPin}
+                                value={formData.to}
+                                onChange={(e) => updateField('to', e.target.value)}
+                            />
+                            <Select
+                                label="Departure Time"
+                                placeholder="Select Time"
+                                icon={Clock}
+                                value={formData.time}
+                                onChange={(e) => updateField('time', e.target.value)}
+                                options={[
+                                    "08:00 AM", "08:30 AM", "09:00 AM", "09:30 AM",
+                                    "10:00 AM", "10:30 AM", "11:00 AM"
+                                ]}
+                            />
+                            <Select
+                                label="Seats Available"
+                                placeholder="Select Seats"
+                                icon={Users}
+                                value={formData.seats}
+                                onChange={(e) => updateField('seats', e.target.value)}
+                                options={["1 Seat", "2 Seats", "3 Seats", "4 Seats", "5 Seats", "6 Seats", "7 Seats"]}
+                            />
+                            <Input
+                                label="Price per Seat (₹)"
+                                placeholder="45"
+                                type="number"
+                                icon={IndianRupee}
+                                value={formData.price}
+                                onChange={(e) => updateField('price', e.target.value)}
+                            />
 
-                        {/* Actions */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '24px' }}>
-                            <Button variant="secondary" onClick={onClose}>
-                                Cancel
-                            </Button>
-                            <Button variant="primary" onClick={handleSave}>
-                                Save Changes
-                            </Button>
-                        </div>
+                            {/* Actions */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '24px' }}>
+                                <Button variant="secondary" onClick={onClose}>
+                                    Cancel
+                                </Button>
+                                <Button variant="primary" onClick={handleSave}>
+                                    Save Changes
+                                </Button>
+                            </div>
+                        </motion.div>
                     </motion.div>
                 </>
             )}

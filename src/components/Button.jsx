@@ -5,7 +5,70 @@ import { motion } from 'framer-motion';
 // Let's use Tailwind-like utility approach with standard CSS provided in index.css or just style objects.
 // Since I haven't set up Tailwind, I'll use style objects and the classes I defined.
 
-const Button = ({ children, variant = 'primary', onClick, className = '', ...props }) => {
+// Simple synthetic click sound
+// Advanced Audio Synthesizer
+export const playClickSound = (type = 'tap') => {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+
+    const audioCtx = new AudioContext();
+    const gainNode = audioCtx.createGain();
+    gainNode.connect(audioCtx.destination);
+
+    const now = audioCtx.currentTime;
+
+    if (type === 'success') {
+        // Celebratory Major Chord (C Majorish: C5, E5, G5)
+        [523.25, 659.25, 783.99].forEach((freq, i) => {
+            const osc = audioCtx.createOscillator();
+            osc.connect(gainNode);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + i * 0.05);
+            osc.start(now + i * 0.05);
+            osc.stop(now + 0.4);
+        });
+        gainNode.gain.setValueAtTime(0.05, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+    }
+    else if (type === 'destructive') {
+        // Low Thud
+        const osc = audioCtx.createOscillator();
+        osc.connect(gainNode);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(50, now + 0.2);
+        gainNode.gain.setValueAtTime(0.1, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+        osc.start(now);
+        osc.stop(now + 0.2);
+    }
+    else if (type === 'nav') {
+        // Soft Navigation Tick
+        const osc = audioCtx.createOscillator();
+        osc.connect(gainNode);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.exponentialRampToValueAtTime(400, now + 0.05);
+        gainNode.gain.setValueAtTime(0.03, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+        osc.start(now);
+        osc.stop(now + 0.05);
+    }
+    else {
+        // Standard Tap (High Pop)
+        const osc = audioCtx.createOscillator();
+        osc.connect(gainNode);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.exponentialRampToValueAtTime(300, now + 0.1);
+        gainNode.gain.setValueAtTime(0.05, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.start(now);
+        osc.stop(now + 0.1);
+    }
+};
+
+const Button = ({ children, variant = 'primary', sound, onClick, className = '', ...props }) => {
     const isPrimary = variant === 'primary';
 
     const baseStyle = {
@@ -25,8 +88,8 @@ const Button = ({ children, variant = 'primary', onClick, className = '', ...pro
 
     const primaryStyle = {
         background: 'var(--gradient-orbit)',
-        color: '#000', // Black text on bright gradient for readability
-        boxShadow: '0 4px 25px rgba(217, 164, 88, 0.6), 0 0 15px rgba(217, 164, 88, 0.3)', // Enhanced glow
+        color: 'var(--color-bg-deep)', // Dark text (from theme bg) on bright gradient
+        boxShadow: 'var(--shadow-button)', // Dynamic shadow
     };
 
     const destructiveStyle = {
@@ -37,10 +100,10 @@ const Button = ({ children, variant = 'primary', onClick, className = '', ...pro
     };
 
     const secondaryStyle = {
-        background: 'rgba(255, 255, 255, 0.1)',
+        background: 'var(--color-bg-card)',
         backdropFilter: 'blur(10px)',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        color: 'white',
+        border: 'var(--glass-border)',
+        color: 'var(--color-text-primary)',
     };
 
     const getVariantStyle = () => {
@@ -62,22 +125,29 @@ const Button = ({ children, variant = 'primary', onClick, className = '', ...pro
             whileHover="hover"
             whileTap={{
                 scale: 0.95,
-                boxShadow: variant === 'primary'
-                    ? '0 4px 15px rgba(217, 164, 88, 0.4)'
-                    : (variant === 'danger' ? '0 4px 15px rgba(255, 77, 77, 0.3)' : '0 4px 15px rgba(255, 255, 255, 0.1)'),
+                boxShadow: 'none',
                 filter: 'brightness(0.95)'
             }}
             variants={{
                 hover: {
-                    boxShadow: variant === 'primary'
-                        ? '0 8px 30px rgba(217, 164, 88, 0.4)'
-                        : (variant === 'danger' ? '0 8px 30px rgba(255, 77, 77, 0.4)' : '0 8px 30px rgba(255, 255, 255, 0.2)'),
-                    filter: 'brightness(1.15)'
+                    boxShadow: variant === 'primary' ? 'var(--shadow-button)' : 'none',
+                    filter: 'brightness(1.05)'
                 }
             }}
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
             style={{ ...baseStyle, ...getVariantStyle() }}
-            onClick={onClick}
+            onClick={(e) => {
+                if (navigator.vibrate) navigator.vibrate(10);
+
+                // Determine sound type
+                let soundType = 'tap';
+                if (sound) soundType = sound;
+                else if (variant === 'danger') soundType = 'destructive';
+                // variant === 'primary' defaults to tap unless explicit sound="success" is passed
+
+                playClickSound(soundType);
+                if (onClick) onClick(e);
+            }}
             className={`${className} ${isPrimary ? 'animate-breathe' : ''}`}
             {...props}
         >
@@ -94,7 +164,7 @@ const Button = ({ children, variant = 'primary', onClick, className = '', ...pro
             )}
 
             <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ position: 'relative' }}>
+                <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                     {children}
                     <motion.div
                         variants={{

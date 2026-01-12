@@ -27,8 +27,10 @@
 
   /* Effects */
   --glass-blur: blur(20px);
-  --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+  --color-border: rgba(255, 255, 255, 0.1);
+  --glass-border: 1px solid var(--color-border);
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-button: 0 4px 25px rgba(217, 164, 88, 0.6), 0 0 15px rgba(217, 164, 88, 0.3);
   --glow-primary: 0 0 20px rgba(217, 164, 88, 0.3);
 
   /* Animation */
@@ -36,6 +38,37 @@
   --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   --ease-orbit: cubic-bezier(0.34, 1.56, 0.64, 1);
   /* Bouncy/Orbital feel */
+}
+
+[data-theme='light'] {
+  --color-bg-deep: #F2F0E9; /* Warm Khaki / Light Stone */
+  /* Warm Off-White */
+  --color-text-primary: #111827;
+  /* Rich Black */
+  --color-text-secondary: #6B7280;
+  /* Cool Grey */
+  --color-text-muted: rgba(107, 114, 128, 0.5);
+
+  --color-bg-card: rgba(255, 255, 255, 0.85);
+  /* More opaque for brightness */
+  --color-bg-card-hover: rgba(217, 164, 88, 0.08);
+  /* Warm hover tint */
+
+  --color-border: rgba(217, 164, 88, 0.15);
+  /* Warm border */
+  --glass-border: 1px solid var(--color-border);
+
+  /* REMOVE BLACK HAZE - Use Gold/Warm shadows */
+  --glass-shadow: 0 8px 32px rgba(217, 164, 88, 0.12);
+  --shadow-button: 0 4px 15px rgba(217, 164, 88, 0.4);
+
+  --glow-primary: 0 0 25px rgba(217, 164, 88, 0.6);
+  /* Brighter glow */
+
+  /* Punchier Gradient */
+  --gradient-text: linear-gradient(135deg, #C16A53 10%, #D9A458 100%);
+  --gradient-orbit: linear-gradient(135deg, #FFD166 0%, #E07A5F 100%);
+  /* Vibrant Yellow -> Terracotta */
 }
 
 * {
@@ -210,7 +243,7 @@ button {
 
 /* Input Placeholder Styling */
 input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--color-text-muted);
   opacity: 1;
   /* Firefox fix */
 }

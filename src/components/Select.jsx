@@ -25,11 +25,11 @@ const Select = ({ label, value, onChange, options, icon: Icon, placeholder, ...p
                     onBlur={() => setIsFocused(false)}
                     style={{
                         width: '100%',
-                        background: 'rgba(255, 255, 255, 0.05)',
+                        background: 'var(--color-bg-card-hover)',
                         border: 'none',
                         padding: '12px 12px 12px 40px',
                         borderRadius: '12px',
-                        color: '#fff',
+                        color: 'var(--color-text-primary)',
                         fontSize: '1rem',
                         outline: 'none',
                         appearance: 'none',
@@ -42,7 +42,7 @@ const Select = ({ label, value, onChange, options, icon: Icon, placeholder, ...p
                         const label = typeof opt === 'object' ? opt.label : opt;
                         const value = typeof opt === 'object' ? opt.value : opt;
                         return (
-                            <option key={value} value={value} style={{ background: '#333' }}>{label}</option>
+                            <option key={value} value={value} style={{ background: 'var(--color-bg-deep)', color: 'var(--color-text-primary)' }}>{label}</option>
                         );
                     })}
                 </select>
@@ -53,7 +53,7 @@ const Select = ({ label, value, onChange, options, icon: Icon, placeholder, ...p
                         left: '12px',
                         top: '50%',
                         transform: 'translateY(-50%)',
-                        color: isFocused ? 'var(--color-brand-primary)' : 'rgba(255,255,255,0.4)',
+                        color: isFocused ? 'var(--color-brand-primary)' : 'var(--color-text-secondary)',
                         pointerEvents: 'none',
                         transition: 'var(--transition-fast)',
                         display: 'flex',
@@ -67,7 +67,7 @@ const Select = ({ label, value, onChange, options, icon: Icon, placeholder, ...p
                     position: 'absolute',
                     inset: 0,
                     borderRadius: '12px',
-                    border: `1px solid ${isFocused ? 'var(--color-brand-primary)' : 'rgba(255, 255, 255, 0.1)'}`,
+                    border: `1px solid ${isFocused ? 'var(--color-brand-primary)' : 'var(--color-border)'}`,
                     pointerEvents: 'none',
                     transition: 'var(--transition-fast)'
                 }}></div>
@@ -77,7 +77,7 @@ const Select = ({ label, value, onChange, options, icon: Icon, placeholder, ...p
                     top: '50%',
                     transform: 'translateY(-50%)',
                     pointerEvents: 'none',
-                    color: 'rgba(255,255,255,0.4)'
+                    color: 'var(--color-text-secondary)'
                 }}>
                     <ChevronDown size={20} />
                 </div>

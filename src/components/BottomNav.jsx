@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Home, Users, Leaf, User, Calendar, Plus } from 'lucide-react';
+import { playClickSound } from './Button';
 
 const CalendarPlus = ({ size, color, strokeWidth }) => (
     <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -8,7 +9,7 @@ const CalendarPlus = ({ size, color, strokeWidth }) => (
             position: 'absolute',
             bottom: -4,
             right: -6,
-            background: '#1A2433', // var(--color-bg-deep)
+            background: 'var(--color-bg-deep)',
             borderRadius: '50%',
             padding: '1px'
         }}>
@@ -35,7 +36,7 @@ const BottomNav = ({ currentTab, setCurrentTab }) => {
             border: 'var(--glass-border)',
             boxShadow: 'var(--glass-shadow)',
             backdropFilter: 'blur(20px)',
-            background: 'rgba(30, 41, 59, 0.7)' // Slightly darker glass
+            background: 'var(--color-bg-card)'
         }}>
             <NavItem
                 icon={Home}
@@ -78,7 +79,11 @@ const BottomNav = ({ currentTab, setCurrentTab }) => {
 
 const NavItem = ({ icon: Icon, label, id, active, onClick }) => (
     <button
-        onClick={onClick}
+        onClick={() => {
+            if (navigator.vibrate) navigator.vibrate(5);
+            playClickSound('nav');
+            onClick();
+        }}
         style={{
             display: 'flex',
             flexDirection: 'column',
@@ -121,7 +126,7 @@ const NavItem = ({ icon: Icon, label, id, active, onClick }) => (
             {/* Icon */}
             <Icon
                 size={22}
-                color={active ? '#FFFFFF' : 'var(--color-text-secondary)'}
+                color={active ? 'var(--color-text-primary)' : 'var(--color-text-secondary)'}
                 strokeWidth={active ? 2.5 : 2}
             />
         </div>

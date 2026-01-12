@@ -12,12 +12,49 @@ import ProfileScreen from './screens/Profile';
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
 import SplashScreen from './components/SplashScreen';
+import VoiceAssistant from './components/VoiceAssistant';
 
 function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [hasOnboarded, setHasOnboarded] = useState(false);
   const [userData, setUserData] = useState(null);
   const [currentTab, setCurrentTab] = useState('home');
+  const [theme, setTheme] = useState('dark');
+  const [upcomingRide, setUpcomingRide] = useState(null); // Start empty to test flow
+  const [pastRides, setPastRides] = useState([
+    {
+      id: 2,
+      date: 'Yesterday',
+      from: 'Indiranagar',
+      to: 'PES University',
+      cost: 60,
+      saved: 40
+    },
+    {
+      id: 3,
+      date: 'Mon, 12 Oct',
+      from: 'Koramangala',
+      to: 'MG Road',
+      cost: 55,
+      saved: 35
+    },
+    {
+      id: 4,
+      date: 'Fri, 9 Oct',
+      from: 'HSR Layout',
+      to: 'JP Nagar',
+      cost: 45,
+      saved: 20
+    }
+  ]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  };
 
   const handleOnboardingComplete = (data) => {
     setUserData(data);
@@ -30,6 +67,21 @@ function App() {
 
   const toggleRole = () => {
     setUserData(prev => ({ ...prev, role: prev.role === 'driver' ? 'rider' : 'driver' }));
+  };
+
+  const handleLogout = () => {
+    setHasOnboarded(false);
+    setUserData(null);
+    setCurrentTab('home');
+  };
+
+  const handleRideCompletion = (rideDetails) => {
+    // 1. Add to History
+    setPastRides(prev => [rideDetails, ...prev]);
+    // 2. Remove from Upcoming (Clear active state)
+    setUpcomingRide(null);
+    // 3. Switch Tab
+    setCurrentTab('rides');
   };
 
   return (
@@ -49,10 +101,16 @@ function App() {
           style={{ height: '100%' }}
         >
           {!hasOnboarded ? (
-            <Onboarding onComplete={handleOnboardingComplete} />
+            <Onboarding onComplete={handleOnboardingComplete} toggleTheme={toggleTheme} currentTheme={theme} />
           ) : (
             <>
-              <Header userData={userData} onLogoClick={() => setCurrentTab('home')} onToggleMode={toggleRole} />
+              <Header
+                userData={userData}
+                onLogoClick={() => setCurrentTab('home')}
+                onToggleMode={toggleRole}
+                toggleTheme={toggleTheme}
+                currentTheme={theme}
+              />
 
               <main style={{ padding: '20px', paddingTop: '80px', paddingBottom: '110px', height: '100%', overflowY: 'auto' }}>
                 <AnimatePresence mode="wait">
@@ -64,16 +122,22 @@ function App() {
                     transition={{ duration: 0.3, ease: 'easeOut' }}
                     style={{ height: '100%' }}
                   >
-                    {currentTab === 'home' && <HomeScreen userData={userData} />}
-                    {currentTab === 'rides' && <RidesScreen userData={userData} />}
+                    {currentTab === 'home' && <HomeScreen userData={userData} onRideComplete={handleRideCompletion} upcomingRide={upcomingRide} setUpcomingRide={setUpcomingRide} />}
+                    {currentTab === 'rides' && <RidesScreen userData={userData} pastRides={pastRides} upcomingRide={upcomingRide} onViewRideDetails={() => setCurrentTab('home')} />}
                     {currentTab === 'commute' && <CommuteScreen userData={userData} onUpdate={handleUserDataUpdate} />}
                     {currentTab === 'impact' && <ImpactScreen />}
-                    {currentTab === 'profile' && <ProfileScreen userData={userData} toggleRole={toggleRole} />}
+                    {currentTab === 'profile' && <ProfileScreen userData={userData} toggleRole={toggleRole} toggleTheme={toggleTheme} currentTheme={theme} onLogout={handleLogout} />}
                   </motion.div>
                 </AnimatePresence>
               </main>
 
               <BottomNav currentTab={currentTab} setCurrentTab={setCurrentTab} />
+              <VoiceAssistant
+                onNavigate={setCurrentTab}
+                upcomingRide={upcomingRide}
+                onToggleRole={toggleRole}
+                userData={userData}
+              />
             </>
           )}
         </motion.div>

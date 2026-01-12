@@ -1,16 +1,41 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Clock, Users, Plus, Search, ArrowRight, User, Car, ShieldCheck } from 'lucide-react';
-import Button from '../components/Button';
+import Button, { playClickSound } from '../components/Button';
+import SOSFeature from '../components/SOSFeature';
 import EditRideModal from '../components/EditRideModal';
 import { useState, useEffect } from 'react';
 
-const Home = ({ userData }) => {
+const Home = ({ userData, onRideComplete, upcomingRide, setUpcomingRide }) => {
+    // We can use upcomingRide to pre-populate or just rely on local simulation for now.
+    // Ideally Home checks upcomingRide to decide if we are in 'active' mode.
+    // For this simulation, we'll keep the local 'joinedRide' state but sync it.
+
+    // Initialize joinedRide from upcomingRide ONLY if it's a ride we joined (rider mode check implicit or based on data structure)
+    // For simplicity, if upcomingRide exists and we are in rider mode (or check a flag), we set it.
+    const [joinedRide, setJoinedRide] = useState(() => {
+        if (upcomingRide && userData?.role !== 'driver') {
+            return {
+                ...upcomingRide,
+                // Ensure passengers or other specific 'joined' props are present if needed
+                passengers: upcomingRide.passengers || [
+                    { id: 0, name: 'You', pickup: upcomingRide.from }
+                ]
+            };
+        }
+        return null;
+    });
+
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [currentUserData, setCurrentUserData] = useState(userData);
     const [isMatching, setIsMatching] = useState(false);
     const [isAnimatingSeat, setIsAnimatingSeat] = useState(false);
+    // Driver Animation Stage: If upcomingRide exists and we are driver, we should be in 'active' or 'completed' stage?
+    // Let's assume 'active' if we have an upcoming ride.
+    const [animStage, setAnimStage] = useState(() => {
+        if (upcomingRide && userData?.role === 'driver') return 'active';
+        return 'idle';
+    });
     const [acceptingRequestId, setAcceptingRequestId] = useState(null);
-    const [animStage, setAnimStage] = useState('idle'); // 'idle' | 'focus' | 'orbiting' | 'locking' | 'done'
     const [showSuccess, setShowSuccess] = useState(false);
 
     useEffect(() => {
@@ -32,7 +57,6 @@ const Home = ({ userData }) => {
     const [acceptedRiders, setAcceptedRiders] = useState([
         { id: 0, name: 'You', pickup: currentUserData?.from || 'Your Location' }
     ]);
-    const [joinedRide, setJoinedRide] = useState(null); // For riders who joined a ride
     const { role } = currentUserData || {};
     const from = currentUserData?.from || 'Pickup Location';
     const to = currentUserData?.to || 'Dropoff Location';
@@ -48,6 +72,87 @@ const Home = ({ userData }) => {
         { from: 'Aundh', to: 'SB Road', time: '08:30 AM', price: 35 },
         { from: 'Magarpatta', to: 'Hadapsar', time: '09:15 AM', price: 20 },
     ];
+
+    /* -------------------------------------------------------------------------- */
+    /*                                DRIVER VIEW                                 */
+    /* -------------------------------------------------------------------------- */
+    const [buttonState, setButtonState] = useState('idle'); // 'idle' | 'completing'
+    const [riderButtonState, setRiderButtonState] = useState('idle');
+
+    const handleEndTrip = () => {
+        playClickSound('success');
+        setButtonState('completing');
+
+        // Show Trip Completed Animation after delay
+        setTimeout(() => {
+            setAnimStage('completed');
+
+            // Navigate after another delay
+            setTimeout(() => {
+                onRideComplete({
+                    id: Date.now(),
+                    date: 'Today',
+                    from: from,
+                    to: to,
+                    cost: parseInt(price) * filledSeatsCount, // Driver earns total
+                    saved: 0 // Driver implementation
+                });
+                if (setUpcomingRide) {
+                    setUpcomingRide(null);
+                }
+            }, 2500);
+        }, 600);
+    };
+
+    const handlePublishRide = () => {
+        if (from && to && price && time) {
+            setAnimStage('searching');
+            // Simulate finding riders
+            setTimeout(() => {
+                setAnimStage('active');
+                // Sync to Upcoming Tab
+                if (setUpcomingRide) {
+                    setUpcomingRide({
+                        id: Date.now(),
+                        driver: 'You (Driver)',
+                        model: 'Your Car',
+                        role: 'driver',
+                        time: time,
+                        from: from,
+                        to: to,
+                        cost: parseInt(price) * filledSeatsCount,
+                        seatsLeft: 0,
+                        filledSeats: filledSeatsCount,
+                        price: price
+                    });
+                }
+            }, 2500);
+        } else {
+            alert('Please fill in all details');
+        }
+    };
+
+    const handleEndRiderTrip = () => {
+        playClickSound('success');
+        setRiderButtonState('completing');
+
+        setTimeout(() => {
+            setAnimStage('completed');
+
+            setTimeout(() => {
+                if (joinedRide) { // Safe check
+                    onRideComplete({
+                        id: Date.now(),
+                        date: 'Today',
+                        from: joinedRide.from,
+                        to: joinedRide.to,
+                        cost: parseInt(joinedRide.price),
+                        saved: 45 // Mock saved logic or calc
+                    });
+                }
+            }, 2500);
+        }, 600);
+    };
 
     /* -------------------------------------------------------------------------- */
     /*                                DRIVER VIEW                                 */
@@ -95,6 +200,7 @@ const Home = ({ userData }) => {
         const handleAcceptSpecificRequest = (requestId) => {
             if (filledSeats < totalSeats) {
                 setAcceptingRequestId(requestId);
+                playClickSound('success'); // Celebratory sound
                 // Direct success state, no complex animation stages
                 setTimeout(() => {
                     const request = pendingRequests.find(r => r.id === requestId);
@@ -120,6 +226,7 @@ const Home = ({ userData }) => {
                 }, 600); // Small delay for "processing" feel
             }
         };
+
 
         return (
             <div style={{ paddingTop: '20px', position: 'relative' }}>
@@ -157,6 +264,9 @@ const Home = ({ userData }) => {
                         </>
                     )}
                 </AnimatePresence>
+
+                {/* SOS is active for Driver because this is their dashboard for today's ride */}
+                <SOSFeature isActive={true} />
 
                 {/* Driver Header */}
                 <div style={{ paddingBottom: '20px', position: 'relative', zIndex: 1 }}>
@@ -227,11 +337,11 @@ const Home = ({ userData }) => {
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '20px' }}>
                             <div>
                                 <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>From</p>
-                                <p style={{ fontWeight: '600', fontSize: '1.1rem', color: 'white' }}>{from}</p>
+                                <p style={{ fontWeight: '600', fontSize: '1.1rem', color: 'var(--color-text-primary)' }}>{from}</p>
                             </div>
                             <div>
                                 <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>To</p>
-                                <p style={{ fontWeight: '600', fontSize: '1.1rem', color: 'white' }}>{to}</p>
+                                <p style={{ fontWeight: '600', fontSize: '1.1rem', color: 'var(--color-text-primary)' }}>{to}</p>
                             </div>
                         </div>
                     </div>
@@ -307,6 +417,35 @@ const Home = ({ userData }) => {
                     </Button>
                 </div>
 
+                {/* End Trip Action */}
+                <div style={{ marginBottom: '30px', display: 'flex', justifyContent: 'center' }}>
+                    <motion.button
+                        whileTap={{ scale: 0.97 }}
+                        onClick={handleEndTrip}
+                        style={{
+                            background: 'var(--color-brand-primary)', // Standard Brand Color
+                            color: '#1A2433', // Dark text
+                            border: 'none',
+                            borderRadius: '9999px', // Pill shape
+                            padding: '16px 32px',
+                            fontSize: '1rem',
+                            fontWeight: '600', // Semibold
+                            boxShadow: '0 4px 15px rgba(217, 164, 88, 0.4)', // Slightly brighter shadow match
+                            display: 'flex', alignItems: 'center', gap: '10px',
+                            cursor: 'pointer',
+                            outline: 'none',
+                            minWidth: '200px',
+                            justifyContent: 'center'
+                        }}
+                    >
+                        {buttonState === 'completing' ? (
+                            'Completing...'
+                        ) : (
+                            <>Complete trip <ShieldCheck size={20} /></>
+                        )}
+                    </motion.button>
+                </div>
+
                 {/* Requests Section */}
                 {
                     !showAcceptedRiders ? (
@@ -338,9 +477,9 @@ const Home = ({ userData }) => {
                                             transition: 'border-color 0.3s ease'
                                         }}
                                     >
-                                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#333', border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--color-bg-deep)', border: '2px solid var(--color-text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                                             <div className="animate-pulse-ring" style={{ position: 'absolute', inset: -4, borderRadius: '50%', border: '2px solid var(--color-brand-primary)' }}></div>
-                                            <User size={20} color="#fff" />
+                                            <User size={20} color="var(--color-text-primary)" />
                                         </div>
                                         <div style={{ flex: 1 }}>
                                             <p style={{ fontWeight: '600' }}>{request.name}</p>
@@ -372,11 +511,11 @@ const Home = ({ userData }) => {
                                 >
                                     <div style={{
                                         width: '40px', height: '40px', borderRadius: '50%',
-                                        background: rider.id === 0 ? 'var(--gradient-orbit)' : '#333',
-                                        border: '2px solid #fff',
+                                        background: rider.id === 0 ? 'var(--gradient-orbit)' : 'var(--color-bg-deep)',
+                                        border: '2px solid var(--color-text-primary)',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center'
                                     }}>
-                                        <User size={20} color={rider.id === 0 ? '#000' : '#fff'} />
+                                        <User size={20} color={rider.id === 0 ? '#000' : 'var(--color-text-primary)'} />
                                     </div>
                                     <div style={{ flex: 1 }}>
                                         <p style={{ fontWeight: '600' }}>{rider.name}</p>
@@ -394,6 +533,35 @@ const Home = ({ userData }) => {
                                     )}
                                 </div>
                             ))}
+                            {animStage === 'active' && (
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    style={{
+                                        padding: '30px 20px',
+                                        background: 'var(--color-bg-card)',
+                                        borderRadius: '24px',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        textAlign: 'center',
+                                        marginBottom: '30px',
+                                        position: 'relative',
+                                        overflow: 'hidden'
+                                    }}
+                                >
+                                    {/* Glowing Pulse Effect for Active Status */}
+                                    <div className="animate-pulse-ring" style={{
+                                        position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+                                        width: '200px', height: '200px', background: 'radial-gradient(circle, rgba(217,164,88,0.2) 0%, transparent 70%)',
+                                        borderRadius: '50%', zIndex: 0, pointerEvents: 'none'
+                                    }}></div>
+
+                                    <h2 style={{ fontSize: '1.8rem', marginBottom: '8px', position: 'relative', zIndex: 1 }}>Riders Found!</h2>
+                                    {/* Use handlePublishRide logic here essentially, but we are already in 'active' stage so this is post-publish view */}
+                                    <p style={{ color: 'var(--color-text-secondary)', position: 'relative', zIndex: 1 }}>
+                                        <span style={{ color: 'var(--color-brand-primary)', fontWeight: '700' }}>{filledSeats} people</span> joining you
+                                    </p>
+                                </motion.div>
+                            )}
                         </>
                     )
                 }
@@ -405,6 +573,30 @@ const Home = ({ userData }) => {
                     userData={currentUserData}
                     onSave={(updatedData) => setCurrentUserData({ ...currentUserData, ...updatedData })}
                 />
+
+                {animStage === 'completed' && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        style={{
+                            position: 'fixed', inset: 0, zIndex: 1000,
+                            background: 'rgba(13, 17, 23, 0.95)',
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
+                        }}
+                    >
+                        <h1 style={{
+                            fontSize: '3rem', fontWeight: '900',
+                            background: 'linear-gradient(to right, #4ade80, #22c55e)',
+                            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                            letterSpacing: '2px', textShadow: '0 0 30px rgba(74, 222, 128, 0.5)',
+                            textAlign: 'center'
+                        }}>
+                            TRIP<br />COMPLETED
+                        </h1>
+                        <p style={{ color: '#fff', marginTop: '20px', fontSize: '1.2rem' }}>Earned ₹{parseInt(price) * filledSeats}</p>
+                    </motion.div>
+                )}
             </div >
         );
     }
@@ -419,6 +611,7 @@ const Home = ({ userData }) => {
     ];
 
     const handleJoinRide = (ride) => {
+        playClickSound('success'); // Celebratory sound
         setIsMatching(true);
 
         // Match Animation Delay
@@ -432,6 +625,27 @@ const Home = ({ userData }) => {
                     { id: 2, name: 'Arjun Patel', pickup: 'Wakad' }
                 ].slice(0, ride.filledSeats + 1) // Include existing + you
             });
+            // Sync to Upcoming Tab
+            if (setUpcomingRide) {
+                setUpcomingRide({
+                    id: ride.id,
+                    driver: ride.driver,
+                    model: ride.vehicle,
+                    role: 'rider', // Tag as rider ride
+                    time: ride.time,
+                    from: ride.from,
+                    to: ride.to,
+                    cost: ride.price,
+                    // Store passengers so we can restore joined state
+                    passengers: [
+                        { id: 0, name: 'You', pickup: from || ride.from }, // Ensure 'from' fallback
+                        ...[
+                            { id: 1, name: 'Priya Sharma', pickup: 'Aundh' },
+                            { id: 2, name: 'Arjun Patel', pickup: 'Wakad' }
+                        ].slice(0, ride.filledSeats)
+                    ]
+                });
+            }
         }, 3200); // 3.2s for full animation sequence
     };
 
@@ -439,6 +653,7 @@ const Home = ({ userData }) => {
     if (joinedRide) {
         return (
             <div style={{ paddingTop: '20px' }}>
+                <SOSFeature isActive={true} />
                 {/* Header */}
                 <div style={{ paddingBottom: '20px' }}>
                     <h1 style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '8px' }}>
@@ -466,8 +681,8 @@ const Home = ({ userData }) => {
                     {/* Driver Info */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: '#333', border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <User size={28} color="#fff" />
+                            <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: 'var(--color-bg-deep)', border: '2px solid var(--color-text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <User size={28} color="var(--color-text-primary)" />
                             </div>
                             <div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -504,11 +719,11 @@ const Home = ({ userData }) => {
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '20px' }}>
                             <div>
                                 <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>From</p>
-                                <p style={{ fontWeight: '600', fontSize: '1.1rem', color: 'white' }}>{joinedRide.from}</p>
+                                <p style={{ fontWeight: '600', fontSize: '1.1rem', color: 'var(--color-text-primary)' }}>{joinedRide.from}</p>
                             </div>
                             <div>
                                 <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>To</p>
-                                <p style={{ fontWeight: '600', fontSize: '1.1rem', color: 'white' }}>{joinedRide.to}</p>
+                                <p style={{ fontWeight: '600', fontSize: '1.1rem', color: 'var(--color-text-primary)' }}>{joinedRide.to}</p>
                             </div>
                         </div>
                     </div>
@@ -536,11 +751,11 @@ const Home = ({ userData }) => {
                     >
                         <div style={{
                             width: '40px', height: '40px', borderRadius: '50%',
-                            background: passenger.id === 0 ? 'var(--gradient-orbit)' : '#333',
-                            border: '2px solid #fff',
+                            background: passenger.id === 0 ? 'var(--gradient-orbit)' : 'var(--color-bg-deep)',
+                            border: '2px solid var(--color-text-primary)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center'
                         }}>
-                            <User size={20} color={passenger.id === 0 ? '#000' : '#fff'} />
+                            <User size={20} color={passenger.id === 0 ? '#000' : 'var(--color-text-primary)'} />
                         </div>
                         <div style={{ flex: 1 }}>
                             <p style={{ fontWeight: '600' }}>{passenger.name}</p>
@@ -560,11 +775,54 @@ const Home = ({ userData }) => {
                 ))}
 
                 {/* Actions */}
-                <div style={{ marginTop: '30px' }}>
-                    <Button variant="danger" onClick={() => setJoinedRide(null)}>
-                        Leave Ride
+                <div style={{ marginTop: '30px', display: 'flex', gap: '12px' }}>
+                    <Button variant="danger" onClick={() => setJoinedRide(null)} style={{ flex: 1 }}>
+                        Leave
                     </Button>
+                    <motion.button
+                        whileTap={{ scale: 0.97 }}
+                        onClick={handleEndRiderTrip}
+                        style={{
+                            flex: 2,
+                            background: 'var(--gradient-orbit)', // Changed to use gradient
+                            color: '#1A2433',
+                            border: 'none',
+                            borderRadius: '9999px',
+                            padding: '16px 32px',
+                            fontSize: '1rem',
+                            fontWeight: '600',
+                            boxShadow: '0 4px 15px rgba(217, 164, 88, 0.4)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        {riderButtonState === 'completing' ? 'Completing...' : <>Complete trip <ShieldCheck size={18} /></>}
+                    </motion.button>
                 </div>
+
+                {animStage === 'completed' && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        style={{
+                            position: 'fixed', inset: 0, zIndex: 1000,
+                            background: 'rgba(13, 17, 23, 0.95)',
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
+                        }}
+                    >
+                        <h1 style={{
+                            fontSize: '3rem', fontWeight: '900',
+                            background: 'linear-gradient(to right, #4ade80, #22c55e)',
+                            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                            letterSpacing: '2px', textShadow: '0 0 30px rgba(74, 222, 128, 0.5)',
+                            textAlign: 'center'
+                        }}>
+                            ARRIVED
+                        </h1>
+                        <p style={{ color: '#fff', marginTop: '20px', fontSize: '1.2rem' }}>You saved ₹45 on this trip.</p>
+                    </motion.div>
+                )}
             </div>
         );
     }
@@ -635,8 +893,8 @@ const Home = ({ userData }) => {
                             {/* Driver Info */}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#333', border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <User size={24} color="#fff" />
+                                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--color-bg-deep)', border: '2px solid var(--color-text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <User size={24} color="var(--color-text-primary)" />
                                     </div>
                                     <div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
