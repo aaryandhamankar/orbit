@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useMotionValue, animate, useTransform } from 'framer-motion';
+// removed unused import or re-verify if needed
 import { ChevronRight, ChevronLeft, ShieldCheck, MapPin, Clock, Car, User, Users, Lock, Sun, Moon, Mail, Key } from 'lucide-react';
 import Button from '../components/Button';
 import { playClickSound } from '../utils/sound';
@@ -12,8 +13,11 @@ import {
     signInAnonymously,
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
-    updateProfile
+    updateProfile,
+    sendPasswordResetEmail
 } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 // Defined outside to prevent re-renders losing focus
 const Step1_Welcome = ({ nextStep, toggleTheme, currentTheme }) => {
@@ -278,6 +282,7 @@ const Step2_Verification = ({ nextStep, prevStep, formData, updateFormData }) =>
     const [isSignUp, setIsSignUp] = useState(true);
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [resetMessage, setResetMessage] = useState('');
 
     const runSuccessAnimation = () => {
         setStatus('verifying');
@@ -340,6 +345,26 @@ const Step2_Verification = ({ nextStep, prevStep, formData, updateFormData }) =>
         } catch (err) {
             console.error("Anon Auth Error:", err);
             setError("Could not sign in anonymously.");
+        }
+    };
+
+    const handleForgotPassword = async () => {
+        const email = formData.collegeId;
+
+        if (!email) {
+            setError("Please enter your email address to reset password.");
+            setResetMessage('');
+            return;
+        }
+
+        try {
+            await sendPasswordResetEmail(auth, email);
+            setResetMessage(`Reset link sent to ${email}. Check your inbox.`);
+            setError('');
+        } catch (err) {
+            console.error("Reset Error:", err);
+            setError(err.message.replace("Firebase: ", ""));
+            setResetMessage('');
         }
     };
 
@@ -470,6 +495,25 @@ const Step2_Verification = ({ nextStep, prevStep, formData, updateFormData }) =>
                         onChange={(e) => setPassword(e.target.value)}
                     />
 
+                    {!isSignUp && (
+                        <div style={{ textAlign: 'right', marginTop: '-10px', marginBottom: '10px' }}>
+                            <button
+                                type="button"
+                                onClick={handleForgotPassword}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: 'var(--color-brand-primary)',
+                                    fontSize: '0.8rem',
+                                    cursor: 'pointer',
+                                    textDecoration: 'underline'
+                                }}
+                            >
+                                Forgot Password?
+                            </button>
+                        </div>
+                    )}
+
                     {error && (
                         <motion.p
                             initial={{ opacity: 0 }}
@@ -477,6 +521,16 @@ const Step2_Verification = ({ nextStep, prevStep, formData, updateFormData }) =>
                             style={{ color: '#ff4d4d', fontSize: '0.85rem', marginTop: '10px', textAlign: 'center' }}
                         >
                             {error}
+                        </motion.p>
+                    )}
+
+                    {resetMessage && (
+                        <motion.p
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            style={{ color: 'var(--color-brand-primary)', fontSize: '0.85rem', marginTop: '10px', textAlign: 'center' }}
+                        >
+                            {resetMessage}
                         </motion.p>
                     )}
                 </div>
@@ -739,7 +793,7 @@ const Step4_Mode = ({ handleComplete, prevStep }) => {
                     }}
                 >
                     <Car size={32} color="#E6B870" style={{ marginBottom: '4px' }} />
-                    <span style={{ color: '#E6B870', fontWeight: '700', letterSpacing: '1px', fontSize: '0.9rem' }}>DRIVER</span>
+                    <span style={{ color: '#E6B870', fontWeight: '700', letterSpacing: '1px', fontSize: '0.9rem' }}>HOST</span>
                     <span style={{ color: 'rgba(230, 184, 112, 0.8)', fontSize: '0.7rem', marginTop: '2px', textAlign: 'center' }}>I have a vehicle</span>
                 </motion.div>
 
@@ -790,7 +844,7 @@ const Step4_Mode = ({ handleComplete, prevStep }) => {
     );
 };
 
-const Onboarding = ({ onComplete, toggleTheme, currentTheme }) => {
+const Onboarding = ({ onComplete, toggleTheme, currentTheme, currentUser, userData }) => {
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
         name: '',
@@ -801,6 +855,17 @@ const Onboarding = ({ onComplete, toggleTheme, currentTheme }) => {
         seats: ''
     });
 
+    // Auto-skip logic removed to prevent jarring UX.
+    // Transition is now user-initiated via "Get Started" button.
+
+    const handleStart = () => {
+        if (currentUser && userData) {
+            setStep(3); // Go to Setup
+        } else {
+            setStep(2); // Go to Verification
+        }
+    };
+
     const nextStep = () => setStep(prev => prev + 1);
     const prevStep = () => setStep(prev => Math.max(1, prev - 1));
 
@@ -808,9 +873,30 @@ const Onboarding = ({ onComplete, toggleTheme, currentTheme }) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 
-    // Wrapper to pass role + data
-    const handleCompleteFlow = (role) => {
-        onComplete({ ...formData, role });
+    // Wrapper to pass role + data - Writes to Firestore
+    const handleCompleteFlow = async (role) => {
+        // Prepare final data object
+        const finalData = {
+            ...formData,
+            role,
+            onboardingComplete: true,
+            // Add timestamp if useful
+            onboardedAt: new Date()
+        };
+
+        if (currentUser) {
+            // Write to Firestore if user is logged in
+            try {
+                const userRef = doc(db, 'users', currentUser.uid);
+                // Merge with existing data (name/email/etc)
+                await setDoc(userRef, finalData, { merge: true });
+            } catch (error) {
+                console.error("Error saving onboarding data:", error);
+            }
+        }
+
+        // Call parent handler (useful for transition logic if any, though listener handles data sync)
+        onComplete(finalData);
     };
 
     return (
@@ -824,7 +910,7 @@ const Onboarding = ({ onComplete, toggleTheme, currentTheme }) => {
                     transition={{ duration: 0.3 }}
                     style={{ height: '100%' }}
                 >
-                    {step === 1 && <Step1_Welcome nextStep={nextStep} toggleTheme={toggleTheme} currentTheme={currentTheme} />}
+                    {step === 1 && <Step1_Welcome nextStep={handleStart} toggleTheme={toggleTheme} currentTheme={currentTheme} />}
                     {step === 2 && <Step2_Verification nextStep={nextStep} prevStep={prevStep} formData={formData} updateFormData={updateFormData} />}
                     {step === 3 && <Step3_Setup nextStep={nextStep} prevStep={prevStep} formData={formData} updateFormData={updateFormData} />}
                     {step === 4 && <Step4_Mode handleComplete={handleCompleteFlow} prevStep={prevStep} />}

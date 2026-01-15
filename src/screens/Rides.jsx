@@ -1,35 +1,56 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageCircle, Clock, MapPin, User } from 'lucide-react';
 import Button from '../components/Button';
 import { playClickSound } from '../utils/sound';
 import Chat from './Chat';
 import RideDetails from './RideDetails';
+import { db, auth } from '../firebase';
+import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 
-const Rides = ({ userData, pastRides, upcomingRide, onViewRideDetails }) => {
+const Rides = ({ userData, upcomingRide, onViewRideDetails }) => {
     const [activeTab, setActiveTab] = useState(upcomingRide ? 'upcoming' : 'history');
-
-    // Effect to switch to history if upcomingRide disappears (completion)
-    // Note: This might auto-switch if user cancels too. Acceptable for now.
-    // We only want to auto-switch if we were on 'upcoming' and it became null.
-    // Simple approach: logic in render or initial state is often enough, 
-    // but if we navigate here FROM home after completion, upcomingRide is null, so initial state 'history' is correct.
-
-    // Auto-switch to 'past' if we have a very recent ride (simple heuristic: if first ride is "Today")
-    // Or just let user navigate. For now, let's keep it simple.
-    // Actually, user asked to "open in past tab". 
-    // We can do this with a useEffect if specific logic is needed, 
-    // but better to just default to 'upcoming' unless specified. 
-    // Let's stick to props for data.
+    const [historyRides, setHistoryRides] = useState([]);
     const [subScreen, setSubScreen] = useState(null); // 'chat' | 'details' | null
+
+    // Listen for history updates
+    useEffect(() => {
+        const uid = auth.currentUser?.uid || userData?.uid;
+        if (!uid) return;
+
+        console.log('📜 Fetching history for:', uid);
+
+        const historyRef = collection(db, 'history');
+        // Remove orderBy to avoid index issues. Sort client-side.
+        const q = query(
+            historyRef,
+            where('userId', '==', uid)
+        );
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const rides = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            // Client-side sort: desc order by completedAt. Treat null (pending) as NOW.
+            rides.sort((a, b) => {
+                const ta = a.completedAt?.toMillis ? a.completedAt.toMillis() : Date.now();
+                const tb = b.completedAt?.toMillis ? b.completedAt.toMillis() : Date.now();
+                return tb - ta;
+            });
+
+            console.log('📜 History rides:', rides.length);
+            setHistoryRides(rides);
+        }, (error) => {
+            console.error('Error fetching history:', error);
+        });
+
+        return () => unsubscribe();
+    }, [userData]);
 
     if (subScreen === 'chat') return <Chat onBack={() => setSubScreen(null)} />;
     if (subScreen === 'details') return <RideDetails onBack={() => setSubScreen(null)} ride={upcomingRide} userData={userData} />;
-
-    // Dynamic upcoming ride based on user data
-
-
-
 
     return (
         <div style={{ paddingBottom: '20px' }}>
@@ -161,19 +182,43 @@ const Rides = ({ userData, pastRides, upcomingRide, onViewRideDetails }) => {
                         </div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            {pastRides && pastRides.length > 0 ? pastRides.map((ride) => (
+                            {historyRides.length > 0 ? historyRides.map((ride) => (
                                 <motion.div
                                     key={ride.id}
                                     className="glass-panel"
                                     style={{ padding: '20px', borderRadius: '20px' }}
                                 >
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                                        <p style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)' }}>{ride.date}</p>
-                                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                            {ride.saved > 0 && <span style={{ color: 'var(--color-success)', fontSize: '0.85rem' }}>Saved ₹{ride.saved}</span>}
-                                            <p style={{ fontWeight: '700', color: 'var(--color-brand-primary)' }}>₹{ride.cost}</p>
+                                        <div>
+                                            <p style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)', marginBottom: '4px' }}>{ride.date} • {ride.time}</p>
+                                            <span style={{
+                                                fontSize: '0.75rem',
+                                                background: ride.role === 'driver' ? 'rgba(74, 222, 128, 0.2)' : 'rgba(217, 164, 88, 0.2)',
+                                                color: ride.role === 'driver' ? 'var(--color-success)' : 'var(--color-brand-primary)',
+                                                padding: '4px 8px',
+                                                borderRadius: '6px',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.5px',
+                                                fontWeight: '600'
+                                            }}>
+                                                {ride.role === 'driver' ? 'Driver' : 'Passenger'}
+                                            </span>
+                                        </div>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
+                                                {ride.role === 'driver' ? 'You Earned' : 'You Spent'}
+                                            </p>
+                                            <p style={{ fontWeight: '700', fontSize: '1.1rem', color: ride.role === 'driver' ? 'var(--color-success)' : 'var(--color-brand-primary)' }}>
+                                                ₹{ride.role === 'driver' ? ride.earnings : ride.cost}
+                                            </p>
                                         </div>
                                     </div>
+
+                                    {ride.role === 'driver' && (
+                                        <div style={{ marginBottom: '12px', fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>
+                                            <span style={{ color: 'var(--color-text-primary)', fontWeight: '600' }}>{ride.passengers}</span> passengers carried
+                                        </div>
+                                    )}
 
                                     {/* Route */}
                                     <div style={{ display: 'flex', gap: '12px' }}>

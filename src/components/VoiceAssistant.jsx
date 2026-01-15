@@ -56,7 +56,15 @@ const VoiceAssistant = ({ onNavigate, upcomingRide, onToggleRole, userData }) =>
         recognition.onerror = (event) => {
             console.error(event.error);
             setIsListening(false);
-            setFeedback('Error: ' + event.error);
+
+            // User-friendly error messages for common issues
+            if (event.error === 'not-allowed') {
+                setFeedback('🎤 Microphone access denied. Please enable in browser settings.');
+            } else if (event.error === 'no-speech') {
+                setFeedback('No speech detected. Try again.');
+            } else {
+                setFeedback('Voice recognition unavailable.');
+            }
         };
 
         recognition.start();
@@ -131,12 +139,19 @@ const VoiceAssistant = ({ onNavigate, upcomingRide, onToggleRole, userData }) =>
         // 3. Role Switching (Priority over generic "driver" keyword)
         else if (t.includes('driver') && (t.includes('mode') || t.includes('switch'))) {
             if (userData?.role !== 'driver') {
-                onToggleRole();
-                setFeedback('Switching to Driver...');
+                // SAFETY CHECK: Ensure user has required vehicle/commute data
+                if (!userData?.seats || !userData?.from || !userData?.to) {
+                    setFeedback('⚠️ Please complete your commute setup first (Profile → Commute)');
+                    setIntentLabel('DRIVER_INCOMPLETE');
+                } else {
+                    onToggleRole();
+                    setFeedback('Switching to Driver...');
+                    setIntentLabel('SWITCH_DRIVER');
+                }
             } else {
                 setFeedback('Already in Driver Mode');
+                setIntentLabel('DRIVER_ALREADY');
             }
-            setIntentLabel('SWITCH_DRIVER');
             matched = true;
         }
         else if (t.includes('rider') && (t.includes('mode') || t.includes('switch'))) {

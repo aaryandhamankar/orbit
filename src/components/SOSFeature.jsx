@@ -42,13 +42,13 @@ const SOSFeature = ({ isActive = false }) => {
                     width: '44px',
                     height: '44px',
                     borderRadius: '12px',
-                    background: 'rgba(220, 38, 38, 0.1)', // Red tint
-                    border: '1px solid rgba(220, 38, 38, 0.3)',
+                    background: '#EF4444', // Solid Red
+                    border: 'none',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#EF4444', // Red 500
-                    boxShadow: '0 4px 20px rgba(220, 38, 38, 0.15)'
+                    color: '#FFFFFF', // White Icon
+                    boxShadow: '0 8px 25px rgba(239, 68, 68, 0.4)'
                 }}
             >
                 <ShieldAlert size={24} />

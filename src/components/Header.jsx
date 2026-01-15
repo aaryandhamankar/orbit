@@ -4,52 +4,77 @@ import { playClickSound } from '../utils/sound';
 
 const Header = ({ userData, onLogoClick, onToggleMode, toggleTheme, currentTheme }) => {
     const isDriver = userData?.role === 'driver';
+    const isDark = currentTheme === 'dark';
+
+    // Shared Glass Style for Floating Elements
+    const glassStyle = {
+        background: isDark ? 'rgba(13, 17, 23, 0.75)' : 'rgba(255, 255, 255, 0.85)',
+        backdropFilter: 'blur(20px)',
+        boxShadow: isDark ? '0 8px 32px rgba(0,0,0,0.3)' : '0 8px 32px rgba(0,0,0,0.1)',
+        border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(255,255,255,0.4)',
+        borderRadius: '24px',
+        height: '56px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        transition: 'all 0.3s ease'
+    };
 
     return (
-        <header className="glass-panel" style={{
+        <header style={{
             position: 'fixed',
-            top: 0,
+            top: '16px',
             left: '50%',
             transform: 'translateX(-50%)',
             width: '100%',
-            maxWidth: '480px',
-            height: '60px',
+            maxWidth: '460px',
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '0 20px',
+            alignItems: 'start',
+            padding: '0 16px',
             zIndex: 100,
-            borderTop: 'none',
-            borderLeft: 'none',
-            borderRight: 'none',
-            borderRadius: '0 0 20px 20px'
+            pointerEvents: 'none'
         }}>
-            {/* Brand Logo */}
+            {/* Left Island: Brand Logo */}
             <div
                 onClick={onLogoClick}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+                style={{
+                    ...glassStyle,
+                    padding: '0 16px 0 12px',
+                    cursor: 'pointer',
+                    pointerEvents: 'auto',
+                    gap: '8px'
+                }}
             >
-                <img src="/orbit-logo-v2.png" alt="Orbit Logo" className="img-orbit-logo" style={{ width: '60px', height: '60px', objectFit: 'contain' }} />
-                <span className="text-orbit-logo" style={{ fontSize: '1.8rem', fontWeight: '900', letterSpacing: '4px' }}>ORBIT</span>
+                <div style={{ position: 'relative', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent to-[var(--color-brand-primary)] opacity-20 rounded-full blur-md"></div>
+                    <img src="/orbit-logo-v2.png" alt="Orbit" style={{ width: '100%', height: '100%', objectFit: 'contain', position: 'relative', zIndex: 1 }} />
+                </div>
+                <span style={{
+                    fontSize: '1.2rem',
+                    fontWeight: '800',
+                    letterSpacing: '2px',
+                    // Use solid colors instead of transparent gradients for better visibility
+                    color: isDark ? '#ffffff' : '#1a1a1a',
+                    fontFamily: "'Inter', sans-serif"
+                }}>ORBIT</span>
             </div>
 
-            {/* Right Side: Theme Toggle + Mode Indicator */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <button
+            {/* Right Side Container */}
+            <div style={{ display: 'flex', gap: '8px', pointerEvents: 'auto' }}>
+
+                {/* Center Island: Theme Toggle (Separated) */}
+                <div
                     onClick={() => {
                         if (navigator.vibrate) navigator.vibrate(10);
                         playClickSound('tap');
                         toggleTheme();
                     }}
                     style={{
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        borderRadius: '50%',
-                        width: '36px',
-                        height: '36px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
+                        ...glassStyle,
+                        width: '56px', // Square-ish pill for toggle
+                        padding: 0,
+                        borderRadius: '20px', // Slightly different radius for variety
                         cursor: 'pointer'
                     }}
                 >
@@ -61,15 +86,16 @@ const Header = ({ userData, onLogoClick, onToggleMode, toggleTheme, currentTheme
                             exit={{ scale: 0.5, opacity: 0, rotate: 90 }}
                             transition={{ duration: 0.2 }}
                         >
-                            {currentTheme === 'dark' ? (
-                                <Moon size={18} color="var(--color-text-primary)" />
+                            {isDark ? (
+                                <Moon size={20} color="var(--color-text-secondary)" />
                             ) : (
-                                <Sun size={18} color="var(--color-text-primary)" />
+                                <Sun size={20} color="#000" />
                             )}
                         </motion.div>
                     </AnimatePresence>
-                </button>
+                </div>
 
+                {/* Right Island: Mode Toggle */}
                 <div
                     onClick={() => {
                         if (navigator.vibrate) navigator.vibrate(10);
@@ -77,22 +103,57 @@ const Header = ({ userData, onLogoClick, onToggleMode, toggleTheme, currentTheme
                         onToggleMode();
                     }}
                     style={{
-                        display: 'flex', alignItems: 'center', gap: '8px',
-                        padding: '8px 16px',
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        borderRadius: '20px',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        cursor: 'pointer'
+                        ...glassStyle,
+                        padding: '0 16px', // Pill shape
+                        gap: '10px',
+                        cursor: 'pointer',
+                        // Optional: nuanced border for active mode
+                        borderColor: isDriver
+                            ? (isDark ? 'rgba(217, 164, 88, 0.4)' : 'rgba(217, 164, 88, 0.6)')
+                            : (isDark ? 'rgba(234, 88, 12, 0.4)' : 'rgba(234, 88, 12, 0.6)')
+                    }}
+                >
+                    <motion.div
+                        initial={false}
+                        animate={{
+                            rotate: isDriver ? 0 : 360,
+                            scale: isDriver ? 1 : 1
+                        }}
+                        transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '50%',
+                            // Consistent colored background circle
+                            background: isDriver
+                                ? 'rgba(217, 164, 88, 0.2)'
+                                : 'rgba(234, 88, 12, 0.2)',
+                        }}
+                    >
+                        {isDriver ? (
+                            <Car size={18} color="var(--color-brand-primary)" />
+                        ) : (
+                            <User size={18} color="var(--color-brand-secondary)" />
+                        )}
+                    </motion.div>
+
+                    <span style={{
+                        fontSize: '0.9rem',
+                        fontWeight: '700',
+                        // Consistent text color logic
+                        color: isDriver
+                            ? 'var(--color-brand-primary)'
+                            : 'var(--color-brand-secondary)',
+                        letterSpacing: '0.5px',
+                        textTransform: 'uppercase'
                     }}>
-                    <div style={{
-                        width: '8px', height: '8px', borderRadius: '50%',
-                        background: isDriver ? 'var(--color-brand-primary)' : 'var(--color-brand-secondary)',
-                        boxShadow: `0 0 10px ${isDriver ? 'var(--color-brand-primary)' : 'var(--color-brand-secondary)'}`
-                    }}></div>
-                    <span style={{ fontSize: '0.9rem', fontWeight: '500', color: 'var(--color-text-primary)' }}>
-                        {isDriver ? 'Driver' : 'Rider'}
+                        {isDriver ? 'Host' : 'Rider'}
                     </span>
                 </div>
+
             </div>
         </header>
     );

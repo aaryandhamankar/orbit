@@ -1,0 +1,76 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Rides collection - Core real-time ride sharing functionality
+    match /rides/{rideId} {
+      // Allow read access to any authenticated user
+      allow read: if request.auth != null;
+      
+      // Allow users to create rides, but they must set their own UID as driverId
+      allow create: if request.auth != null 
+                    && request.resource.data.driverId == request.auth.uid
+                    && request.resource.data.status == 'active'
+                    && request.resource.data.seatsAvailable >= 0;
+      
+      // Allow updates in two scenarios:
+      // 1. Ride owner can update their own ride
+      // 2. Any authenticated user can join a ride (decrement seatsAvailable)
+      allow update: if request.auth != null 
+                    && (
+                      // Owner can update their ride
+                      resource.data.driverId == request.auth.uid
+                      // OR anyone can join by decrementing seats
+                      || (request.resource.data.seatsAvailable < resource.data.seatsAvailable 
+                          && request.resource.data.seatsAvailable >= 0)
+                    );
+      
+      // Only the ride owner can delete/cancel their ride
+      allow delete: if request.auth != null 
+                    && resource.data.driverId == request.auth.uid;
+      
+      // Ride requests subcollection
+      match /requests/{requestId} {
+        // Anyone can read requests
+        allow read: if request.auth != null;
+        
+        // Riders can create requests with their own UID, OR Driver can create (for mocks)
+        allow create: if request.auth != null
+                      && (
+                        request.resource.data.riderId == request.auth.uid ||
+                        get(/databases/$(database)/documents/rides/$(rideId)).data.driverId == request.auth.uid
+                      );
+        
+        // Allow updates if:
+        // 1. You're the driver (can accept/cancel requests)
+        // 2. You're the rider updating your own request (can leave)
+        allow update: if request.auth != null
+                      && (
+                        // Driver can update any request
+                        get(/databases/$(database)/documents/rides/$(rideId)).data.driverId == request.auth.uid
+                        // OR rider can update their own request
+                        || resource.data.riderId == request.auth.uid
+                      );
+      }
+    }
+    
+    // User profiles collection (if you add user data later)
+    match /users/{userId} {
+      // Users can read their own profile
+      allow read: if request.auth != null && request.auth.uid == userId;
+      
+      // Users can create/update their own profile
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    // History collection for completed rides
+    match /history/{historyId} {
+      // Users can read their own history
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      
+      // Users can create history entries for themselves OR for others (driver creates for riders)
+      allow create: if request.auth != null;
+    }
+
+  }
+}

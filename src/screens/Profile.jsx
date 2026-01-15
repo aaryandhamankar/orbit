@@ -2,12 +2,63 @@ import { useState } from 'react';
 import { User, Settings, CreditCard, ShieldCheck, HelpCircle, LogOut, Moon, Sun, ArrowLeft, Command, MapPin, ShieldAlert, Car, RefreshCw, Bell, Navigation } from 'lucide-react';
 import Button from '../components/Button';
 import { playClickSound } from '../utils/sound';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { deleteUser, updateProfile } from 'firebase/auth';
+import { auth, db } from '../firebase';
 
 const Profile = ({ userData, toggleRole, toggleTheme, currentTheme, onLogout }) => {
     const isDriver = userData?.role === 'driver';
     const isDark = currentTheme === 'dark';
     const [activeSubScreen, setActiveSubScreen] = useState(null); // 'payment' | 'security' | 'help' | 'voice_help'
+    const [isEditing, setIsEditing] = useState(false);
+    const [newName, setNewName] = useState(userData?.name || '');
+    const [newEmail, setNewEmail] = useState(userData?.email || '');
+    const [editLoading, setEditLoading] = useState(false);
+
+    const handleEditToggle = () => {
+        if (isEditing) {
+            // Save changes
+            setEditLoading(true);
+            const userRef = doc(db, 'users', auth.currentUser.uid);
+            updateDoc(userRef, {
+                name: newName,
+                email: newEmail
+            }).then(() => {
+                setEditLoading(false);
+                setIsEditing(false);
+            }).catch(err => {
+                console.error("Error updating profile:", err);
+                setEditLoading(false);
+            });
+        } else {
+            setNewName(userData?.name || '');
+            setNewEmail(userData?.email || '');
+            setIsEditing(true);
+        }
+    };
+
+    const handleDeleteAccount = async () => {
+        if (!window.confirm("Are you sure? This action is permanent and cannot be undone.")) return;
+
+        try {
+            const user = auth.currentUser;
+            if (!user) return;
+
+            // Delete Firestore Data
+            await deleteDoc(doc(db, 'users', user.uid));
+
+            // Delete Auth User
+            await deleteUser(user);
+
+            // onLogout handled by App.jsx listener usually, but explicitly calling it doesn't hurt
+            if (onLogout) onLogout();
+
+        } catch (err) {
+            console.error("Error deleting account:", err);
+            alert("Error: Re-login may be required to delete sensitive account data.");
+        }
+    };
 
     // Sub-screen: Voice Command Guide
     if (activeSubScreen === 'voice_help') {
@@ -65,7 +116,7 @@ const Profile = ({ userData, toggleRole, toggleTheme, currentTheme, onLogout }) 
                                 category: 'Actions',
                                 icon: <Car size={18} color="#fbbf24" />,
                                 commands: [
-                                    { phrase: "Switch to Driver", desc: "Toggle Mode" },
+                                    { phrase: "Switch to Host", desc: "Toggle Mode" },
                                     { phrase: "Ride Details", desc: "View Active Trip" },
                                     { phrase: "Do I have a ride?", desc: "Check Status" }
                                 ]
@@ -118,13 +169,52 @@ const Profile = ({ userData, toggleRole, toggleTheme, currentTheme, onLogout }) 
                     {/* If we had real images, we'd render <img> here */}
                 </div>
                 <div>
-                    <h1 style={{ fontSize: '1.8rem', fontWeight: '800', margin: 0, lineHeight: 1.2 }}>
-                        {userData?.name || 'Guest User'}
-                    </h1>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {isEditing ? (
+                            <input
+                                value={newName}
+                                onChange={(e) => setNewName(e.target.value)}
+                                style={{
+                                    fontSize: '1.5rem', fontWeight: '800',
+                                    background: 'var(--color-bg-deep)', color: 'var(--color-text-primary)',
+                                    border: '1px solid var(--color-border)', borderRadius: '8px', padding: '4px 8px', width: '200px'
+                                }}
+                            />
+                        ) : (
+                            <h1 style={{ fontSize: '1.8rem', fontWeight: '800', margin: 0, lineHeight: 1.2 }}>
+                                {userData?.name || 'Guest User'}
+                            </h1>
+                        )}
+                        <button
+                            onClick={handleEditToggle}
+                            disabled={editLoading}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-brand-primary)', fontSize: '0.8rem', fontWeight: '600' }}
+                        >
+                            {editLoading ? '...' : (isEditing ? 'Save' : 'Edit')}
+                        </button>
+                    </div>
+                    {/* Email Display / Edit */}
+                    <div style={{ marginTop: '4px', fontSize: '0.9rem', color: 'var(--color-text-secondary)' }}>
+                        {isEditing ? (
+                            <input
+                                value={newEmail}
+                                onChange={(e) => setNewEmail(e.target.value)}
+                                placeholder="Email Address"
+                                style={{
+                                    fontSize: '0.9rem',
+                                    background: 'var(--color-bg-deep)', color: 'var(--color-text-primary)',
+                                    border: '1px solid var(--color-border)', borderRadius: '6px', padding: '4px 8px', width: '200px'
+                                }}
+                            />
+                        ) : (
+                            <span>{userData?.email || 'No email linked'}</span>
+                        )}
+                    </div>
+
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
                         <ShieldCheck size={14} color="var(--color-brand-primary)" />
                         <span style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)', fontWeight: '500' }}>
-                            {isDriver ? 'Driver • 4.9 ★' : 'Rider • 4.8 ★'}
+                            {isDriver ? 'Host • 4.9 ★' : 'Rider • 4.8 ★'}
                         </span>
                     </div>
                 </div>
@@ -155,7 +245,7 @@ const Profile = ({ userData, toggleRole, toggleTheme, currentTheme, onLogout }) 
                     }}>
                         <RefreshCw size={20} color={isDriver ? 'var(--color-brand-primary)' : 'var(--color-brand-secondary)'} />
                     </div>
-                    <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>{isDriver ? 'Driver' : 'Rider'} Mode</span>
+                    <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>{isDriver ? 'Host' : 'Rider'} Mode</span>
                 </motion.div>
 
                 {/* Theme Switcher */}
@@ -236,15 +326,16 @@ const Profile = ({ userData, toggleRole, toggleTheme, currentTheme, onLogout }) 
                 I will consolidate everything into ONE clean list for maximum consistency.
             */}
 
-            {/* 4. Sign Out */}
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+            {/* 4. Delete Account & Sign Out */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center', marginBottom: '20px' }}>
                 <Button
                     variant="secondary"
                     sound="destructive"
                     style={{
+                        width: 'auto',
                         color: '#ff4d4d',
-                        border: '1px solid rgba(255, 77, 77, 0.2)',
-                        background: 'rgba(255, 77, 77, 0.05)',
+                        border: '1px solid rgba(255, 77, 77, 0.3)',
+                        background: 'rgba(255, 77, 77, 0.15)',
                         padding: '12px 32px',
                         borderRadius: '30px',
                         fontSize: '0.95rem'
@@ -253,11 +344,29 @@ const Profile = ({ userData, toggleRole, toggleTheme, currentTheme, onLogout }) 
                 >
                     <LogOut size={18} /> Sign Out
                 </Button>
+
+                <button
+                    onClick={handleDeleteAccount}
+                    style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#ff4d4d',
+                        opacity: 0.7,
+                        fontSize: '0.85rem',
+                        cursor: 'pointer',
+                        textDecoration: 'underline'
+                    }}
+                >
+                    Delete Account Permanently
+                </button>
             </div>
 
             <div style={{ textAlign: 'center', marginTop: '30px', paddingBottom: '20px', opacity: 0.6 }}>
                 <p style={{ fontSize: '0.75rem', fontWeight: '500', color: 'var(--color-text-muted)' }}>
                     Orbit v1.0 • Built for Hackathon
+                </p>
+                <p style={{ fontSize: '0.75rem', fontWeight: '500', color: 'var(--color-text-muted)', marginTop: '4px' }}>
+                    By Aaryan Dhamankar
                 </p>
             </div>
         </div>

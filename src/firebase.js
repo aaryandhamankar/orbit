@@ -16,8 +16,15 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+let analytics;
+try {
+    analytics = getAnalytics(app);
+} catch (error) {
+    console.warn("Firebase Analytics failed to initialize (likely blocked by client):", error);
+    analytics = null;
+}
 
 export { app, analytics, auth, db };
