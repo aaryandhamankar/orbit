@@ -23,7 +23,7 @@ const Rides = ({ userData, pastRides, upcomingRide, onViewRideDetails }) => {
     const [subScreen, setSubScreen] = useState(null); // 'chat' | 'details' | null
 
     if (subScreen === 'chat') return <Chat onBack={() => setSubScreen(null)} />;
-    if (subScreen === 'details') return <RideDetails onBack={() => setSubScreen(null)} userData={userData} />;
+    if (subScreen === 'details') return <RideDetails onBack={() => setSubScreen(null)} ride={upcomingRide} userData={userData} />;
 
     // Dynamic upcoming ride based on user data
 
@@ -34,7 +34,7 @@ const Rides = ({ userData, pastRides, upcomingRide, onViewRideDetails }) => {
         <div style={{ paddingBottom: '20px' }}>
             <AnimatePresence>
                 {subScreen === 'chat' && <Chat onBack={() => setSubScreen(null)} />}
-                {subScreen === 'details' && <RideDetails onBack={() => setSubScreen(null)} userData={userData} />}
+                {subScreen === 'details' && <RideDetails onBack={() => setSubScreen(null)} ride={upcomingRide} userData={userData} />}
             </AnimatePresence>
 
             <h1 style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '20px' }}>Your Rides</h1>

@@ -2,7 +2,23 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, MapPin, Clock, Users, Phone, ShieldCheck, Star } from 'lucide-react';
 import Button, { playClickSound } from '../components/Button';
 
-const RideDetails = ({ onBack, userData }) => {
+const RideDetails = ({ onBack, ride, userData }) => {
+    // Fallback to userData if ride not provided, or mock defaults
+    const driverName = ride?.driver || 'Rohan Gupta';
+    const driverImage = ride?.driverImage || "/rohan_profile_1768120367542.png"; // Fallback image
+    const rating = ride?.rating || 4.9;
+    const ridesCount = ride?.ridesCount || 124;
+    const time = ride?.time || '09:00 AM';
+    const fromLoc = ride?.from || userData?.from || 'Koramangala';
+    const toLoc = ride?.to || userData?.to || 'PES University';
+    const price = ride?.price || ride?.cost || 45; // Handle price/cost mismatch
+
+    // Calculate or use duration
+    const duration = ride?.duration || 35;
+
+    const passengerCount = ride?.passengers?.length || 1;
+    const totalSeats = ride?.totalSeats || 4;
+
     return (
         <motion.div
             initial={{ opacity: 0, x: 20 }}
@@ -51,15 +67,15 @@ const RideDetails = ({ onBack, userData }) => {
                 {/* Driver Info */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '30px' }}>
                     <div>
-                        <h1 style={{ fontSize: '1.8rem', fontWeight: '700', marginBottom: '4px' }}>Rohan Gupta</h1>
+                        <h1 style={{ fontSize: '1.8rem', fontWeight: '700', marginBottom: '4px' }}>{driverName}</h1>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <Star size={14} fill="#FBBC05" color="#FBBC05" />
-                            <span style={{ fontWeight: '600' }}>4.9</span>
-                            <span style={{ color: 'var(--color-text-secondary)' }}>• 124 Rides</span>
+                            <span style={{ fontWeight: '600' }}>{rating}</span>
+                            <span style={{ color: 'var(--color-text-secondary)' }}>• {ridesCount} Rides</span>
                         </div>
                     </div>
                     <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#ccc', overflow: 'hidden', border: '2px solid var(--color-brand-primary)' }}>
-                        <img src="/rohan_profile_1768120367542.png" alt="Rohan" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img src={driverImage} alt={driverName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     </div>
                 </div>
 
@@ -73,13 +89,18 @@ const RideDetails = ({ onBack, userData }) => {
                         </div>
                         <div style={{ flex: 1 }}>
                             <div style={{ marginBottom: '20px' }}>
-                                <p style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)', marginBottom: '2px' }}>09:15 AM</p>
-                                <p style={{ fontWeight: '600', fontSize: '1.1rem' }}>{userData?.from || 'Koramangala'}</p>
+                                <p style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)', marginBottom: '2px' }}>{time}</p>
+                                <p style={{ fontWeight: '600', fontSize: '1.1rem' }}>{fromLoc}</p>
                             </div>
                             <div>
-                                <p style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)', marginBottom: '2px' }}>09:50 AM (Est.)</p>
-                                <p style={{ fontWeight: '600', fontSize: '1.1rem' }}>{userData?.to || 'PES University'}</p>
+                                <p style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)', marginBottom: '2px' }}>Dropoff</p>
+                                <p style={{ fontWeight: '600', fontSize: '1.1rem' }}>{toLoc}</p>
                             </div>
+                        </div>
+                        {/* Price Display within Route Card */}
+                        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-end' }}>
+                            <p style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--color-brand-primary)' }}>₹{price}</p>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>Total</span>
                         </div>
                     </div>
                 </div>
@@ -89,12 +110,12 @@ const RideDetails = ({ onBack, userData }) => {
                     <div className="glass-panel" style={{ padding: '16px', borderRadius: '16px', textAlign: 'center' }}>
                         <div style={{ marginBottom: '8px', color: 'var(--color-brand-primary)' }}><Clock size={24} /></div>
                         <p style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)' }}>Time</p>
-                        <p style={{ fontWeight: '700' }}>35 mins</p>
+                        <p style={{ fontWeight: '700' }}>{duration} mins</p>
                     </div>
                     <div className="glass-panel" style={{ padding: '16px', borderRadius: '16px', textAlign: 'center' }}>
                         <div style={{ marginBottom: '8px', color: '#E6B870' }}><Users size={24} /></div>
                         <p style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)' }}>Passengers</p>
-                        <p style={{ fontWeight: '700' }}>3/4</p>
+                        <p style={{ fontWeight: '700' }}>{passengerCount}/{totalSeats}</p>
                     </div>
                 </div>
 

@@ -3,7 +3,8 @@ import { MapPin, Clock, Users, Plus, Search, ArrowRight, User, Car, ShieldCheck 
 import Button, { playClickSound } from '../components/Button';
 import SOSFeature from '../components/SOSFeature';
 import EditRideModal from '../components/EditRideModal';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { matchRides } from '../utils/rideMatching';
 
 const Home = ({ userData, onRideComplete, upcomingRide, setUpcomingRide }) => {
     // We can use upcomingRide to pre-populate or just rely on local simulation for now.
@@ -16,6 +17,7 @@ const Home = ({ userData, onRideComplete, upcomingRide, setUpcomingRide }) => {
         if (upcomingRide && userData?.role !== 'driver') {
             return {
                 ...upcomingRide,
+                price: upcomingRide.price || upcomingRide.cost, // Ensure price is present from stored cost
                 // Ensure passengers or other specific 'joined' props are present if needed
                 passengers: upcomingRide.passengers || [
                     { id: 0, name: 'You', pickup: upcomingRide.from }
@@ -94,7 +96,7 @@ const Home = ({ userData, onRideComplete, upcomingRide, setUpcomingRide }) => {
                     date: 'Today',
                     from: from,
                     to: to,
-                    cost: parseInt(price) * filledSeatsCount, // Driver earns total
+                    cost: parseInt(price) * (filledSeatsCount - 1), // Driver earns total (excluding self)
                     saved: 0 // Driver implementation
                 });
                 if (setUpcomingRide) {
@@ -120,7 +122,7 @@ const Home = ({ userData, onRideComplete, upcomingRide, setUpcomingRide }) => {
                         time: time,
                         from: from,
                         to: to,
-                        cost: parseInt(price) * filledSeatsCount,
+                        cost: parseInt(price) * (filledSeatsCount - 1),
                         seatsLeft: 0,
                         filledSeats: filledSeatsCount,
                         price: price
@@ -146,7 +148,7 @@ const Home = ({ userData, onRideComplete, upcomingRide, setUpcomingRide }) => {
                         date: 'Today',
                         from: joinedRide.from,
                         to: joinedRide.to,
-                        cost: parseInt(joinedRide.price),
+                        cost: parseInt(joinedRide.price || joinedRide.cost || 0),
                         saved: 45 // Mock saved logic or calc
                     });
                 }
@@ -594,7 +596,7 @@ const Home = ({ userData, onRideComplete, upcomingRide, setUpcomingRide }) => {
                         }}>
                             TRIP<br />COMPLETED
                         </h1>
-                        <p style={{ color: '#fff', marginTop: '20px', fontSize: '1.2rem' }}>Earned ₹{parseInt(price) * filledSeats}</p>
+                        <p style={{ color: '#fff', marginTop: '20px', fontSize: '1.2rem' }}>Earned ₹{parseInt(price) * (filledSeats - 1)}</p>
                     </motion.div>
                 )}
             </div >
@@ -604,11 +606,103 @@ const Home = ({ userData, onRideComplete, upcomingRide, setUpcomingRide }) => {
     /* -------------------------------------------------------------------------- */
     /*                                 RIDER VIEW                                 */
     /* -------------------------------------------------------------------------- */
-    const availableRides = [
-        { id: 1, driver: 'Rahul Mehta', vehicle: 'Car', time: '09:00 AM', from, to, filledSeats: 2, totalSeats: 4, price: 45, verified: true },
-        { id: 2, driver: 'Ananya Singh', vehicle: 'Bike', time: '09:15 AM', from, to, filledSeats: 0, totalSeats: 1, price: 25, verified: true },
-        { id: 3, driver: 'Vikram Patel', vehicle: 'Car', time: '09:30 AM', from, to, filledSeats: 1, totalSeats: 3, price: 40, verified: true },
+    /* -------------------------------------------------------------------------- */
+    /*                                 RIDER VIEW                                 */
+    /* -------------------------------------------------------------------------- */
+
+    // Mock Rider Request (Dynamic based on user's current "to" location)
+    const riderRequest = {
+        time: '09:00 AM', // In a real app, this would also be dynamic
+        distance: 7.0, // approx km marker for Aundh
+        to: to // Match the user's requested dropoff
+    };
+
+    const rawAvailableRides = [
+        {
+            id: 1,
+            driver: 'Rahul Mehta',
+            vehicle: 'Swift Dzire',
+            time: '09:05 AM', // 5 min diff -> Score 30
+            from: from, // Dynamic pickup
+            to: to, // Dynamic destination
+            distance: 7.2, // 0.2km diff -> Score ~10
+            filledSeats: 2,
+            totalSeats: 4,
+            price: 45,
+            verified: true,
+            duration: 45 // minutes
+        },
+        {
+            id: 2,
+            driver: 'Ananya Singh',
+            vehicle: 'Honda Activa',
+            time: '09:15 AM', // 15 min diff -> Score 20
+            from: from, // Dynamic pickup
+            to: to, // Dynamic destination
+            distance: 9.0, // 2km diff -> Score ~8
+            filledSeats: 0,
+            totalSeats: 1,
+            price: 25,
+            verified: true,
+            duration: 35 // minutes
+        },
+        {
+            id: 3,
+            driver: 'Vikram Patel',
+            vehicle: 'Hyundai Creta',
+            time: '09:40 AM', // 40 min diff -> Score 0
+            from: from, // Dynamic pickup
+            to: to, // Dynamic destination
+            distance: 0.0, // 7km diff -> Score ~3
+            filledSeats: 1,
+            totalSeats: 4,
+            price: 60,
+            verified: true,
+            duration: 55 // minutes
+        },
+        {
+            id: 4,
+            driver: 'Sneha Kapoor',
+            vehicle: 'Tata Nexon',
+            time: '08:50 AM', // 10 min diff -> Score 30
+            from: from, // Dynamic pickup
+            to: to, // Dynamic destination
+            distance: 5.5, // 1.5km diff -> Score ~8.5
+            filledSeats: 2,
+            totalSeats: 4,
+            price: 35,
+            verified: true,
+            duration: 50 // minutes
+        },
     ];
+
+    // Helper to calculate ETA
+    const calculateEta = (startTime, durationMinutes) => {
+        // Parse "HH:MM AM/PM"
+        const [timePart, modifier] = startTime.split(' ');
+        let [hours, minutes] = timePart.split(':').map(Number);
+
+        if (hours === 12) hours = 0;
+        if (modifier === 'PM') hours += 12;
+
+        const date = new Date();
+        date.setHours(hours, minutes, 0, 0);
+
+        // Add duration
+        date.setMinutes(date.getMinutes() + durationMinutes);
+
+        // Format back
+        let newHours = date.getHours();
+        const newModifier = newHours >= 12 ? 'PM' : 'AM';
+        newHours = newHours % 12 || 12;
+        const newMinutes = date.getMinutes().toString().padStart(2, '0');
+
+        return `${newHours}:${newMinutes} ${newModifier}`;
+    };
+
+    const availableRides = useMemo(() => {
+        return matchRides(riderRequest, rawAvailableRides);
+    }, []);
 
     const handleJoinRide = (ride) => {
         playClickSound('success'); // Celebratory sound
@@ -925,9 +1019,24 @@ const Home = ({ userData, onRideComplete, upcomingRide, setUpcomingRide }) => {
                                     <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', margin: '4px 0' }}>to</p>
                                     <p style={{ fontSize: '0.9rem', fontWeight: '600' }}>{ride.to}</p>
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.05)', padding: '6px 10px', borderRadius: '12px' }}>
-                                    <Clock size={12} color="#aaa" />
-                                    <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>{ride.time}</span>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                                    <div style={{
+                                        display: 'flex', alignItems: 'center', gap: '6px',
+                                        background: 'rgba(255,255,255,0.08)',
+                                        padding: '6px 12px', borderRadius: '12px',
+                                        border: '1px solid rgba(255,255,255,0.1)'
+                                    }}>
+                                        <Clock size={14} color="var(--color-text-secondary)" />
+                                        <span style={{ fontSize: '0.9rem', fontWeight: '700', letterSpacing: '0.5px' }}>{ride.time}</span>
+                                    </div>
+                                    <div style={{
+                                        display: 'flex', alignItems: 'center', gap: '4px',
+                                        background: 'rgba(74, 222, 128, 0.1)',
+                                        padding: '4px 8px', borderRadius: '8px',
+                                        border: '1px solid rgba(74, 222, 128, 0.2)'
+                                    }}>
+                                        <span style={{ fontSize: '0.75rem', color: '#4ade80', fontWeight: '600' }}>ETA {calculateEta(ride.time, ride.duration)}</span>
+                                    </div>
                                 </div>
                             </div>
 
