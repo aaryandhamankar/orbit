@@ -18,12 +18,25 @@ const Commute = ({ userData, onUpdate }) => {
 
     useEffect(() => {
         if (userData) {
-            setFormData({
-                from: userData.from || '',
-                to: userData.to || '',
-                time: userData.time || '',
-                seats: userData.seats || '',
-                price: userData.price || '45'
+            requestAnimationFrame(() => {
+                setFormData(prev => {
+                    if (
+                        prev.from === (userData.from || '') &&
+                        prev.to === (userData.to || '') &&
+                        prev.time === (userData.time || '') &&
+                        prev.seats === (userData.seats || '') &&
+                        prev.price === (userData.price || '45')
+                    ) {
+                        return prev;
+                    }
+                    return {
+                        from: userData.from || '',
+                        to: userData.to || '',
+                        time: userData.time || '',
+                        seats: userData.seats || '',
+                        price: userData.price || '45'
+                    };
+                });
             });
         }
     }, [userData]);

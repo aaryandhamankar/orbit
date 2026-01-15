@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Send } from 'lucide-react';
-import Button, { playClickSound } from '../components/Button';
+import Button from '../components/Button';
+import { playClickSound } from '../utils/sound';
 import Input from '../components/Input';
 
 const Chat = ({ onBack }) => {

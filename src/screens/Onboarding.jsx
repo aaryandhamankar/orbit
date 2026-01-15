@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useMotionValue, animate, useTransform } from 'framer-motion';
 import { ChevronRight, ChevronLeft, ShieldCheck, MapPin, Clock, Car, User, Users, Lock, Sun, Moon } from 'lucide-react';
-import Button, { playClickSound } from '../components/Button';
+import Button from '../components/Button';
+import { playClickSound } from '../utils/sound';
 import Input from '../components/Input';
 import Select from '../components/Select';
 

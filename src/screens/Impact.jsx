@@ -1,9 +1,9 @@
-import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
+import { motion, useMotionValue, animate } from 'framer-motion';
 import { useEffect, useState } from 'react';
 
 const CountUp = ({ to, duration = 2, delay = 0.5, suffix = "" }) => {
     const count = useMotionValue(0);
-    const rounded = useTransform(count, (latest) => Math.round(latest).toLocaleString() + suffix);
+
     const [displayValue, setDisplayValue] = useState("0" + suffix);
 
     useEffect(() => {

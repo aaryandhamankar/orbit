@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Home, Users, Leaf, User, Calendar, Plus } from 'lucide-react';
-import { playClickSound } from './Button';
+import { playClickSound } from '../utils/sound';
 
 const CalendarPlus = ({ size, color, strokeWidth }) => (
     <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -36,35 +36,30 @@ const BottomNav = ({ currentTab, setCurrentTab }) => {
         }}>
             <NavItem
                 icon={Home}
-                label="Home"
                 id="home"
                 active={currentTab === 'home'}
                 onClick={() => setCurrentTab('home')}
             />
             <NavItem
                 icon={Users}
-                label="Rides"
                 id="rides"
                 active={currentTab === 'rides'}
                 onClick={() => setCurrentTab('rides')}
             />
             <NavItem
                 icon={CalendarPlus}
-                label="Commute"
                 id="commute"
                 active={currentTab === 'commute'}
                 onClick={() => setCurrentTab('commute')}
             />
             <NavItem
                 icon={Leaf}
-                label="Impact"
                 id="impact"
                 active={currentTab === 'impact'}
                 onClick={() => setCurrentTab('impact')}
             />
             <NavItem
                 icon={User}
-                label="Profile"
                 id="profile"
                 active={currentTab === 'profile'}
                 onClick={() => setCurrentTab('profile')}
@@ -73,7 +68,7 @@ const BottomNav = ({ currentTab, setCurrentTab }) => {
     );
 };
 
-const NavItem = ({ icon: Icon, label, id, active, onClick }) => (
+const NavItem = ({ icon: Icon, id, active, onClick }) => (
     <button
         onClick={() => {
             if (navigator.vibrate) navigator.vibrate(5);

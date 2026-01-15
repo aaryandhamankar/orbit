@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { ArrowLeft, MapPin, Clock, Users, Phone, ShieldCheck, Star } from 'lucide-react';
-import Button, { playClickSound } from '../components/Button';
+import Button from '../components/Button';
+import { playClickSound } from '../utils/sound';
 
 const RideDetails = ({ onBack, ride, userData }) => {
     // Fallback to userData if ride not provided, or mock defaults

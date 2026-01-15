@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageCircle, Clock, MapPin, User } from 'lucide-react';
-import Button, { playClickSound } from '../components/Button';
+import Button from '../components/Button';
+import { playClickSound } from '../utils/sound';
 import Chat from './Chat';
 import RideDetails from './RideDetails';
 

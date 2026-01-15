@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Mic, Command } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -128,7 +128,29 @@ const VoiceAssistant = ({ onNavigate, upcomingRide, onToggleRole, userData }) =>
             matched = true;
         }
 
-        // 3. Status Queries & Details
+        // 3. Role Switching (Priority over generic "driver" keyword)
+        else if (t.includes('driver') && (t.includes('mode') || t.includes('switch'))) {
+            if (userData?.role !== 'driver') {
+                onToggleRole();
+                setFeedback('Switching to Driver...');
+            } else {
+                setFeedback('Already in Driver Mode');
+            }
+            setIntentLabel('SWITCH_DRIVER');
+            matched = true;
+        }
+        else if (t.includes('rider') && (t.includes('mode') || t.includes('switch'))) {
+            if (userData?.role === 'driver') {
+                onToggleRole();
+                setFeedback('Switching to Rider...');
+            } else {
+                setFeedback('Already in Rider Mode');
+            }
+            setIntentLabel('SWITCH_RIDER');
+            matched = true;
+        }
+
+        // 4. Status Queries & Details
         else if (t.includes('details') || t.includes('info') || t.includes('driver')) {
             if (upcomingRide) {
                 onNavigate('home'); // Home usually shows the active card
@@ -151,27 +173,7 @@ const VoiceAssistant = ({ onNavigate, upcomingRide, onToggleRole, userData }) =>
             matched = true;
         }
 
-        // 4. Role Switching
-        else if (t.includes('driver') && (t.includes('mode') || t.includes('switch'))) {
-            if (userData?.role !== 'driver') {
-                onToggleRole();
-                setFeedback('Switching to Driver...');
-            } else {
-                setFeedback('Already in Driver Mode');
-            }
-            setIntentLabel('SWITCH_DRIVER');
-            matched = true;
-        }
-        else if (t.includes('rider') && (t.includes('mode') || t.includes('switch'))) {
-            if (userData?.role === 'driver') {
-                onToggleRole();
-                setFeedback('Switching to Rider...');
-            } else {
-                setFeedback('Already in Rider Mode');
-            }
-            setIntentLabel('SWITCH_RIDER');
-            matched = true;
-        }
+
 
         if (!matched) {
             setFeedback('Command not recognized.');

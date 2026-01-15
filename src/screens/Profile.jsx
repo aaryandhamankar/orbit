@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { User, Settings, CreditCard, ShieldCheck, HelpCircle, LogOut, Moon, Sun, ArrowLeft, Command, MapPin, ShieldAlert, Car, RefreshCw, Bell, Navigation } from 'lucide-react';
-import Button, { playClickSound } from '../components/Button';
+import Button from '../components/Button';
+import { playClickSound } from '../utils/sound';
 import { motion } from 'framer-motion';
 
 const Profile = ({ userData, toggleRole, toggleTheme, currentTheme, onLogout }) => {

@@ -1,9 +1,10 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Clock, Users, Plus, Search, ArrowRight, User, Car, ShieldCheck } from 'lucide-react';
-import Button, { playClickSound } from '../components/Button';
+import Button from '../components/Button';
+import { playClickSound } from '../utils/sound';
 import SOSFeature from '../components/SOSFeature';
 import EditRideModal from '../components/EditRideModal';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { matchRides } from '../utils/rideMatching';
 
 const Home = ({ userData, onRideComplete, upcomingRide, setUpcomingRide }) => {
@@ -30,8 +31,7 @@ const Home = ({ userData, onRideComplete, upcomingRide, setUpcomingRide }) => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [currentUserData, setCurrentUserData] = useState(userData);
     const [isMatching, setIsMatching] = useState(false);
-    const [isAnimatingSeat, setIsAnimatingSeat] = useState(false);
-    // Driver Animation Stage: If upcomingRide exists and we are driver, we should be in 'active' or 'completed' stage?
+
     // Let's assume 'active' if we have an upcoming ride.
     const [animStage, setAnimStage] = useState(() => {
         if (upcomingRide && userData?.role === 'driver') return 'active';
@@ -88,12 +88,7 @@ const Home = ({ userData, onRideComplete, upcomingRide, setUpcomingRide }) => {
 
     // No dynamic logic needed - we start with 2 requests always.
 
-    const puneSpots = [
-        { from: 'FC Road', to: 'Deccan Gymkhana', time: '10:00 AM', price: 25 },
-        { from: 'Koregaon Park', to: 'Viman Nagar', time: '06:00 PM', price: 40 },
-        { from: 'Aundh', to: 'SB Road', time: '08:30 AM', price: 35 },
-        { from: 'Magarpatta', to: 'Hadapsar', time: '09:15 AM', price: 20 },
-    ];
+
 
     /* -------------------------------------------------------------------------- */
     /*                                DRIVER VIEW                                 */
@@ -126,33 +121,7 @@ const Home = ({ userData, onRideComplete, upcomingRide, setUpcomingRide }) => {
         }, 600);
     };
 
-    const handlePublishRide = () => {
-        if (from && to && price && time) {
-            setAnimStage('searching');
-            // Simulate finding riders
-            setTimeout(() => {
-                setAnimStage('active');
-                // Sync to Upcoming Tab
-                if (setUpcomingRide) {
-                    setUpcomingRide({
-                        id: Date.now(),
-                        driver: 'You (Driver)',
-                        model: 'Your Car',
-                        role: 'driver',
-                        time: time,
-                        from: from,
-                        to: to,
-                        cost: parseInt(price) * (filledSeatsCount - 1),
-                        seatsLeft: 0,
-                        filledSeats: filledSeatsCount,
-                        price: price
-                    });
-                }
-            }, 2500);
-        } else {
-            alert('Please fill in all details');
-        }
-    };
+
 
     const handleEndRiderTrip = () => {
         playClickSound('success');
@@ -219,11 +188,7 @@ const Home = ({ userData, onRideComplete, upcomingRide, setUpcomingRide }) => {
             </div>
         );
 
-        const handleAcceptRequest = () => {
-            if (filledSeats < totalSeats) {
-                setFilledSeatsCount(prev => prev + 1);
-            }
-        };
+
 
         const handleAcceptSpecificRequest = (requestId) => {
             if (filledSeats < totalSeats) {
