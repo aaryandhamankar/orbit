@@ -20,7 +20,7 @@ const CalendarPlus = ({ size, color, strokeWidth }) => (
 
 const BottomNav = ({ currentTab, setCurrentTab }) => {
     return (
-        <nav className="glass-panel" style={{
+        <nav className="glass-nav" style={{
             position: 'fixed',
             bottom: '20px',
             left: '50%',
@@ -32,11 +32,7 @@ const BottomNav = ({ currentTab, setCurrentTab }) => {
             justifyContent: 'space-around',
             alignItems: 'center',
             zIndex: 100,
-            borderRadius: '40px',
-            border: 'var(--glass-border)',
-            boxShadow: 'var(--glass-shadow)',
-            backdropFilter: 'blur(20px)',
-            background: 'var(--color-bg-card)'
+            borderRadius: '40px'
         }}>
             <NavItem
                 icon={Home}

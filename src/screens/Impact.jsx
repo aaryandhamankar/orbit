@@ -54,7 +54,7 @@ const Impact = () => {
                 {/* SVG Progress Circles */}
                 <svg width="260" height="260" viewBox="0 0 100 100" style={{ position: 'absolute', transform: 'rotate(-90deg)' }}>
                     {/* Background Track */}
-                    <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="4" />
+                    <circle cx="50" cy="50" r="45" fill="none" stroke="var(--color-border)" strokeWidth="4" />
                     {/* Primary Progress */}
                     <motion.circle
                         cx="50" cy="50" r="45" fill="none"
@@ -93,7 +93,7 @@ const Impact = () => {
                         justifyContent: 'center',
                         zIndex: 1,
                         boxShadow: '0 0 30px rgba(217, 164, 88, 0.2)',
-                        border: '1px solid rgba(255, 255, 255, 0.05)',
+                        border: '1px solid var(--color-border)',
                         transition: 'all 0.3s ease'
                     }}
                 >
@@ -117,12 +117,12 @@ const Impact = () => {
                     transition={{ delay: 1.2 }}
                     className="glass-panel" style={{
                         padding: '20px', borderRadius: '24px',
-                        border: '1px solid rgba(255, 255, 255, 0.05)',
+                        border: '1px solid var(--color-border)',
                         transition: 'border-color 0.3s ease'
                     }}
                 >
                     <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', marginBottom: '8px' }}>Total Saved</p>
-                    <p style={{ fontSize: '1.5rem', fontWeight: '700', color: '#4ade80' }}>
+                    <p style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--color-success)' }}>
                         ₹<CountUp to={1240} delay={1.4} />
                     </p>
                 </motion.div>
@@ -137,7 +137,7 @@ const Impact = () => {
                     transition={{ delay: 1.2 }}
                     className="glass-panel" style={{
                         padding: '20px', borderRadius: '24px',
-                        border: '1px solid rgba(255, 255, 255, 0.05)',
+                        border: '1px solid var(--color-border)',
                         transition: 'border-color 0.3s ease'
                     }}
                 >
@@ -159,7 +159,7 @@ const Impact = () => {
                 transition={{ delay: 1.8 }}
                 className="glass-panel" style={{
                     marginTop: '20px', padding: '24px', borderRadius: '24px',
-                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                    border: '1px solid var(--color-border)',
                     transition: 'border-color 0.3s ease'
                 }}
             >

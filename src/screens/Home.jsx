@@ -43,6 +43,26 @@ const Home = ({ userData, onRideComplete, upcomingRide, setUpcomingRide }) => {
     useEffect(() => {
         setCurrentUserData(userData);
     }, [userData]);
+
+    // Sync local joinedRide with global upcomingRide source of truth
+    useEffect(() => {
+        if (upcomingRide && userData?.role !== 'driver') {
+            setJoinedRide({
+                ...upcomingRide,
+                price: upcomingRide.price || upcomingRide.cost,
+                passengers: upcomingRide.passengers || [
+                    { id: 0, name: 'You', pickup: upcomingRide.from }
+                ]
+            });
+        } else if (!upcomingRide && userData?.role !== 'driver') {
+            // Optional: Clear joined ride if global state clears? 
+            // For now, only clear if we want to force reset. 
+            // In 'handleRideCompletion', we clear upcomingRide.
+            // Let's allow local state to persist if needed, OR clear it.
+            // Given the flow, clearing it is safer to avoid "ghost rides".
+            setJoinedRide(null);
+        }
+    }, [upcomingRide, userData]);
     const [filledSeatsCount, setFilledSeatsCount] = useState(1); // Track accepted riders
     const [showAcceptedRiders, setShowAcceptedRiders] = useState(false);
     const allPossibleRequests = [
@@ -403,9 +423,19 @@ const Home = ({ userData, onRideComplete, upcomingRide, setUpcomingRide }) => {
                         <span style={{ fontSize: '1.3rem', fontWeight: '700', color: 'var(--color-brand-primary)' }}>₹{price}</span>
                     </div>
 
-                    {/* Primary Action */}
-                    <Button variant="primary" onClick={() => setShowAcceptedRiders(!showAcceptedRiders)}>
-                        {showAcceptedRiders ? 'View Requests' : `View Riders (${acceptedRiders.length})`} <ArrowRight size={18} />
+                    {/* Primary Action - Demoted to Secondary to avoid clashing with Complete Trip */}
+                    {/* Primary Action - Complete Trip */}
+                    <Button
+                        variant="primary"
+                        onClick={handleEndTrip}
+                        whileTap={{ scale: 0.97 }}
+                        style={{ width: '100%', borderRadius: '16px' }}
+                    >
+                        {buttonState === 'completing' ? (
+                            'Completing...'
+                        ) : (
+                            <>Complete trip <ShieldCheck size={20} /></>
+                        )}
                     </Button>
                 </motion.div>
 
@@ -414,38 +444,29 @@ const Home = ({ userData, onRideComplete, upcomingRide, setUpcomingRide }) => {
                     <Button variant="secondary" onClick={() => setIsEditModalOpen(true)}>
                         Edit Ride
                     </Button>
-                    <Button variant="danger">
+                    <Button variant="danger" sound="destructive" onClick={handleCancelRide}>
                         Cancel Ride
                     </Button>
                 </div>
 
                 {/* End Trip Action */}
                 <div style={{ marginBottom: '30px', display: 'flex', justifyContent: 'center' }}>
-                    <motion.button
-                        whileTap={{ scale: 0.97 }}
-                        onClick={handleEndTrip}
+                    {/* Secondary Action - View Riders (Glass Gold) */}
+                    <Button
+                        variant="secondary"
+                        onClick={() => setShowAcceptedRiders(!showAcceptedRiders)}
                         style={{
-                            background: 'var(--color-brand-primary)', // Standard Brand Color
-                            color: '#1A2433', // Dark text
-                            border: 'none',
-                            borderRadius: '9999px', // Pill shape
-                            padding: '16px 32px',
-                            fontSize: '1rem',
-                            fontWeight: '600', // Semibold
-                            boxShadow: '0 4px 15px rgba(217, 164, 88, 0.4)', // Slightly brighter shadow match
-                            display: 'flex', alignItems: 'center', gap: '10px',
-                            cursor: 'pointer',
-                            outline: 'none',
                             minWidth: '200px',
-                            justifyContent: 'center'
+                            borderRadius: '9999px',
+                            background: 'rgba(217, 164, 88, 0.15)',
+                            border: '1px solid var(--color-brand-primary)',
+                            color: 'var(--color-brand-primary)',
+                            fontSize: '1rem',
+                            fontWeight: '600'
                         }}
                     >
-                        {buttonState === 'completing' ? (
-                            'Completing...'
-                        ) : (
-                            <>Complete trip <ShieldCheck size={20} /></>
-                        )}
-                    </motion.button>
+                        {showAcceptedRiders ? 'Hide Requests' : `View Riders (${acceptedRiders.length})`} <ArrowRight size={18} />
+                    </Button>
                 </div>
 
                 {/* Requests Section */}
@@ -492,7 +513,7 @@ const Home = ({ userData, onRideComplete, upcomingRide, setUpcomingRide }) => {
                                             whileTap={{ scale: 0.85 }}
                                             style={{ padding: '8px 16px', fontSize: '0.85rem', width: 'auto' }}
                                             onClick={() => handleAcceptSpecificRequest(request.id)}
-                                            disabled={filledSeats >= totalSeats || acceptingRequestId === request.id}
+                                            disabled={filledSeats >= totalSeats || acceptingRequestId !== null}
                                         >
                                             {acceptingRequestId === request.id ? <ShieldCheck size={16} /> : (filledSeats >= totalSeats ? 'Full' : 'Accept')}
                                         </Button>
@@ -700,9 +721,9 @@ const Home = ({ userData, onRideComplete, upcomingRide, setUpcomingRide }) => {
         return `${newHours}:${newMinutes} ${newModifier}`;
     };
 
-    const availableRides = useMemo(() => {
-        return matchRides(riderRequest, rawAvailableRides);
-    }, []);
+    // Memoize riderRequest and rawAvailableRides to prevent loops, or simpler: just calculate availableRides
+    // Since data is small, direct calculation is safer for sync
+    const availableRides = matchRides(riderRequest, rawAvailableRides);
 
     const handleJoinRide = (ride) => {
         playClickSound('success'); // Celebratory sound
@@ -711,15 +732,7 @@ const Home = ({ userData, onRideComplete, upcomingRide, setUpcomingRide }) => {
         // Match Animation Delay
         setTimeout(() => {
             setIsMatching(false);
-            setJoinedRide({
-                ...ride,
-                passengers: [
-                    { id: 0, name: 'You', pickup: from },
-                    { id: 1, name: 'Priya Sharma', pickup: 'Aundh' },
-                    { id: 2, name: 'Arjun Patel', pickup: 'Wakad' }
-                ].slice(0, ride.filledSeats + 1) // Include existing + you
-            });
-            // Sync to Upcoming Tab
+            // Source of Truth: Global State
             if (setUpcomingRide) {
                 setUpcomingRide({
                     id: ride.id,
@@ -743,6 +756,12 @@ const Home = ({ userData, onRideComplete, upcomingRide, setUpcomingRide }) => {
         }, 3200); // 3.2s for full animation sequence
     };
 
+    const handleCancelRide = () => {
+        playClickSound('destructive');
+        if (setUpcomingRide) setUpcomingRide(null);
+        setJoinedRide(null); // Immediate feedback
+    };
+
     // If rider has joined a ride, show joined ride view
     if (joinedRide) {
         return (
@@ -759,8 +778,8 @@ const Home = ({ userData, onRideComplete, upcomingRide, setUpcomingRide }) => {
                         padding: '6px 12px', borderRadius: '20px',
                         border: '1px solid rgba(76, 175, 80, 0.3)'
                     }}>
-                        <span style={{ width: '8px', height: '8px', background: '#4ade80', borderRadius: '50%', boxShadow: '0 0 10px #4ade80' }}></span>
-                        <span style={{ fontSize: '0.85rem', color: '#4ade80', fontWeight: '600' }}>CONFIRMED</span>
+                        <span style={{ width: '8px', height: '8px', background: 'var(--color-success)', borderRadius: '50%', boxShadow: '0 0 10px var(--color-success)' }}></span>
+                        <span style={{ fontSize: '0.85rem', color: 'var(--color-success)', fontWeight: '600' }}>CONFIRMED</span>
                     </div>
                 </div>
 
@@ -781,7 +800,7 @@ const Home = ({ userData, onRideComplete, upcomingRide, setUpcomingRide }) => {
                             <div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                     <p style={{ fontWeight: '700', fontSize: '1.1rem' }}>{joinedRide.driver}</p>
-                                    <ShieldCheck size={16} color="#4ade80" />
+                                    <ShieldCheck size={16} color="var(--color-success)" />
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
                                     <Car size={14} color="#aaa" />
@@ -870,28 +889,26 @@ const Home = ({ userData, onRideComplete, upcomingRide, setUpcomingRide }) => {
 
                 {/* Actions */}
                 <div style={{ marginTop: '30px', display: 'flex', gap: '12px' }}>
-                    <Button variant="danger" onClick={() => setJoinedRide(null)} style={{ flex: 1 }}>
-                        Leave
-                    </Button>
-                    <motion.button
-                        whileTap={{ scale: 0.97 }}
-                        onClick={handleEndRiderTrip}
+                    <Button
+                        variant="danger"
+                        sound="destructive"
+                        onClick={() => setJoinedRide(null)}
                         style={{
-                            flex: 2,
-                            background: 'var(--gradient-orbit)', // Changed to use gradient
-                            color: '#1A2433',
-                            border: 'none',
-                            borderRadius: '9999px',
-                            padding: '16px 32px',
-                            fontSize: '1rem',
-                            fontWeight: '600',
-                            boxShadow: '0 4px 15px rgba(217, 164, 88, 0.4)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                            cursor: 'pointer'
+                            flex: 1,
+                            background: '#ff4d4d', // Solid red to match theme request
+                            color: '#fff',
+                            border: 'none'
                         }}
                     >
+                        Leave
+                    </Button>
+                    <Button
+                        variant="primary"
+                        onClick={handleEndRiderTrip}
+                        style={{ flex: 2 }}
+                    >
                         {riderButtonState === 'completing' ? 'Completing...' : <>Complete trip <ShieldCheck size={18} /></>}
-                    </motion.button>
+                    </Button>
                 </div>
 
                 {animStage === 'completed' && (
@@ -993,7 +1010,7 @@ const Home = ({ userData, onRideComplete, upcomingRide, setUpcomingRide }) => {
                                     <div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                             <p style={{ fontWeight: '600' }}>{ride.driver}</p>
-                                            {ride.verified && <ShieldCheck size={14} color="#4ade80" />}
+                                            {ride.verified && <ShieldCheck size={14} color="var(--color-success)" />}
                                         </div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
                                             <Car size={12} color="#aaa" />
@@ -1035,7 +1052,7 @@ const Home = ({ userData, onRideComplete, upcomingRide, setUpcomingRide }) => {
                                         padding: '4px 8px', borderRadius: '8px',
                                         border: '1px solid rgba(74, 222, 128, 0.2)'
                                     }}>
-                                        <span style={{ fontSize: '0.75rem', color: '#4ade80', fontWeight: '600' }}>ETA {calculateEta(ride.time, ride.duration)}</span>
+                                        <span style={{ fontSize: '0.75rem', color: 'var(--color-success)', fontWeight: '600' }}>ETA {calculateEta(ride.time, ride.duration)}</span>
                                     </div>
                                 </div>
                             </div>
@@ -1091,9 +1108,23 @@ const Home = ({ userData, onRideComplete, upcomingRide, setUpcomingRide }) => {
                             </div>
 
                             {/* Join Button */}
-                            <Button variant="primary" onClick={() => handleJoinRide(ride)}>
-                                Join Ride <ArrowRight size={18} />
-                            </Button>
+                            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
+                                <Button
+                                    variant="primary"
+                                    onClick={() => handleJoinRide(ride)}
+                                    disabled={isMatching}
+                                    style={{
+                                        width: 'auto',
+                                        padding: '12px 32px',
+                                        borderRadius: '999px',
+                                        opacity: isMatching ? 0.7 : 1,
+                                        cursor: isMatching ? 'not-allowed' : 'pointer',
+                                        filter: isMatching ? 'grayscale(0.5)' : 'none'
+                                    }}
+                                >
+                                    {isMatching ? 'Confirming...' : 'Join Ride'} <ArrowRight size={18} />
+                                </Button>
+                            </div>
                         </motion.div>
                     ))}
                 </div>

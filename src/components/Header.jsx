@@ -29,8 +29,8 @@ const Header = ({ userData, onLogoClick, onToggleMode, toggleTheme, currentTheme
                 onClick={onLogoClick}
                 style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
             >
-                <img src="/orbit-logo-v2.png" alt="Orbit Logo" style={{ width: '60px', height: '60px', objectFit: 'contain', filter: 'drop-shadow(0 0 12px rgba(217, 164, 88, 0.3))' }} />
-                <span style={{ fontSize: '1.8rem', fontWeight: '900', letterSpacing: '4px', background: 'var(--gradient-text)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>ORBIT</span>
+                <img src="/orbit-logo-v2.png" alt="Orbit Logo" className="img-orbit-logo" style={{ width: '60px', height: '60px', objectFit: 'contain' }} />
+                <span className="text-orbit-logo" style={{ fontSize: '1.8rem', fontWeight: '900', letterSpacing: '4px' }}>ORBIT</span>
             </div>
 
             {/* Right Side: Theme Toggle + Mode Indicator */}

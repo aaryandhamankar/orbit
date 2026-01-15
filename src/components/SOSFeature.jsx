@@ -15,12 +15,12 @@ const SOSFeature = ({ isActive = false }) => {
     const handleActivate = (type) => {
         // Serious feedback
         if (navigator.vibrate) navigator.vibrate([200]); // Long vibration confirmation
-        setIsActivated(true);
+        setActivationType(type);
 
         // Simulate "Silent Dispatch"
         setTimeout(() => {
             setIsOpen(false);
-            setIsActivated(false);
+            setActivationType(null); // Reset for next time
         }, 3000);
     };
 

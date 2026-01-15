@@ -93,7 +93,7 @@ const Rides = ({ userData, pastRides, upcomingRide, onViewRideDetails }) => {
                                             <p style={{ color: 'var(--color-text-secondary)' }}>Today</p>
                                         </div>
                                         <div style={{
-                                            background: 'rgba(217, 164, 88, 0.1)',
+                                            background: 'var(--color-bg-card-hover)',
                                             padding: '6px 12px', borderRadius: '12px',
                                             height: 'fit-content'
                                         }}>
@@ -102,7 +102,7 @@ const Rides = ({ userData, pastRides, upcomingRide, onViewRideDetails }) => {
                                     </div>
 
                                     {/* Detailed Info (Driver/Car) */}
-                                    <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                    <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid var(--color-border)' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                             <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--color-bg-deep)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--color-border)' }}>
                                                 <User size={20} color="var(--color-text-primary)" />
@@ -117,7 +117,7 @@ const Rides = ({ userData, pastRides, upcomingRide, onViewRideDetails }) => {
                                     {/* Route */}           <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
                                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '4px' }}>
                                             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--color-brand-secondary)' }}></div>
-                                            <div style={{ width: '1px', height: '25px', background: 'rgba(255,255,255,0.1)', margin: '4px 0' }}></div>
+                                            <div style={{ width: '1px', height: '25px', background: 'var(--color-border)', margin: '4px 0' }}></div>
                                             <div style={{ width: '8px', height: '8px', borderRadius: '50%', border: '2px solid var(--color-brand-primary)' }}></div>
                                         </div>
                                         <div style={{ flex: 1 }}>
@@ -164,12 +164,12 @@ const Rides = ({ userData, pastRides, upcomingRide, onViewRideDetails }) => {
                                 <motion.div
                                     key={ride.id}
                                     className="glass-panel"
-                                    style={{ padding: '20px', borderRadius: '20px', opacity: 0.8 }}
+                                    style={{ padding: '20px', borderRadius: '20px' }}
                                 >
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
                                         <p style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)' }}>{ride.date}</p>
                                         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                            {ride.saved > 0 && <span style={{ color: '#4ade80', fontSize: '0.85rem' }}>Saved ₹{ride.saved}</span>}
+                                            {ride.saved > 0 && <span style={{ color: 'var(--color-success)', fontSize: '0.85rem' }}>Saved ₹{ride.saved}</span>}
                                             <p style={{ fontWeight: '700', color: 'var(--color-brand-primary)' }}>₹{ride.cost}</p>
                                         </div>
                                     </div>
@@ -177,9 +177,9 @@ const Rides = ({ userData, pastRides, upcomingRide, onViewRideDetails }) => {
                                     {/* Route */}
                                     <div style={{ display: 'flex', gap: '12px' }}>
                                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '4px' }}>
-                                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#666' }}></div>
-                                            <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.05)', margin: '4px 0' }}></div>
-                                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', border: '1px solid #666' }}></div>
+                                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--color-text-secondary)' }}></div>
+                                            <div style={{ width: '1px', height: '20px', background: 'var(--color-border)', margin: '4px 0' }}></div>
+                                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', border: '1px solid var(--color-text-secondary)' }}></div>
                                         </div>
                                         <div>
                                             <p style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)', marginBottom: '12px' }}>{ride.from}</p>

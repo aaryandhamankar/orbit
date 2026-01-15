@@ -68,7 +68,7 @@ export const playClickSound = (type = 'tap') => {
     }
 };
 
-const Button = ({ children, variant = 'primary', sound, onClick, className = '', ...props }) => {
+const Button = ({ children, variant = 'primary', sound, onClick, className = '', style, ...props }) => {
     const isPrimary = variant === 'primary';
 
     const baseStyle = {
@@ -135,7 +135,7 @@ const Button = ({ children, variant = 'primary', sound, onClick, className = '',
                 }
             }}
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-            style={{ ...baseStyle, ...getVariantStyle() }}
+            style={{ ...baseStyle, ...getVariantStyle(), ...style }}
             onClick={(e) => {
                 if (navigator.vibrate) navigator.vibrate(10);
 

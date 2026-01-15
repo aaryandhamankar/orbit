@@ -4,9 +4,9 @@
   /* Color System */
   --color-bg-deep: #1A2433;
   /* Deep Navy / Near-Black */
-  --color-bg-card: rgba(30, 41, 59, 0.4);
-  /* Glassy Deep Navy */
-  --color-bg-card-hover: rgba(255, 255, 255, 0.05);
+  --color-bg-card: rgba(30, 41, 65, 0.65);
+  /* Glassy Deep Navy - Deeper & Richer */
+  --color-bg-card-hover: rgba(255, 255, 255, 0.08);
 
   --color-text-primary: #FFFFFF;
   --color-text-secondary: #94A3B8;
@@ -14,24 +14,35 @@
   --color-text-muted: rgba(148, 163, 184, 0.5);
 
   /* Brand Colors - Planet & Orbit */
-  --color-brand-primary: #D9A458;
-  /* Muted Gold (Planet) */
-  --color-brand-secondary: #C16A53;
-  /* Terracotta (Rings) */
+  --color-brand-primary: #F59E0B;
+  /* Vivid Amber (Planet) */
+  --color-brand-secondary: #EA580C;
+  /* Deep Orange (Rings) */
 
   /* Gradient System */
-  --gradient-orbit: linear-gradient(135deg, #FFC857 0%, #C16A53 100%);
-  /* Warm Yellow -> Orange */
-  --gradient-orbit-glow: radial-gradient(circle, rgba(255, 200, 87, 0.4) 0%, rgba(193, 106, 83, 0.1) 70%);
-  --gradient-text: linear-gradient(135deg, #FFFFFF 30%, #FFC857 100%);
+  --gradient-orbit: linear-gradient(135deg, #FBBF24 0%, #EA580C 100%);
+  /* Bright Amber -> Vivid Orange */
+  --gradient-orbit-glow: radial-gradient(circle, rgba(251, 191, 36, 0.4) 0%, rgba(234, 88, 12, 0.2) 70%);
+  --gradient-text: linear-gradient(135deg, #FFFFFF 30%, #FBBF24 100%);
+
+  /* Status Colors */
+  --color-success: #4ade80;
+  /* Neon Green (Dark Mode) */
 
   /* Effects */
   --glass-blur: blur(20px);
   --color-border: rgba(255, 255, 255, 0.1);
   --glass-border: 1px solid var(--color-border);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
   --shadow-button: 0 4px 25px rgba(217, 164, 88, 0.6), 0 0 15px rgba(217, 164, 88, 0.3);
   --glow-primary: 0 0 20px rgba(217, 164, 88, 0.3);
+
+  /* iOS Nav Glass - Dark Mode - SUPER TRANSLUCENT */
+  --nav-bg: rgba(22, 28, 36, 0.4);
+  /* See-through Deep Blue-Grey */
+  --nav-border: 1px solid rgba(255, 255, 255, 0.15);
+  --nav-shadow: 0 -0.5px 0 0 rgba(255, 255, 255, 0.1), 0 8px 40px rgba(0, 0, 0, 0.6);
+  --nav-blur: blur(40px) saturate(200%);
 
   /* Animation */
   --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -41,34 +52,52 @@
 }
 
 [data-theme='light'] {
-  --color-bg-deep: #F2F0E9; /* Warm Khaki / Light Stone */
+  --color-bg-deep: #F2F0E9;
+  /* Warm Khaki / Light Stone */
   /* Warm Off-White */
   --color-text-primary: #111827;
   /* Rich Black */
-  --color-text-secondary: #6B7280;
+  --color-text-secondary: #4B5563;
+  /* Darker Grey for better contrast */
   /* Cool Grey */
-  --color-text-muted: rgba(107, 114, 128, 0.5);
+  --color-text-muted: rgba(75, 85, 99, 0.6);
 
-  --color-bg-card: rgba(255, 255, 255, 0.85);
-  /* More opaque for brightness */
-  --color-bg-card-hover: rgba(217, 164, 88, 0.08);
+  --color-bg-card: rgba(255, 255, 255, 0.7);
+  /* Translucent for Milky Glass */
+  --color-bg-card-hover: rgba(217, 164, 88, 0.2);
   /* Warm hover tint */
 
-  --color-border: rgba(217, 164, 88, 0.15);
-  /* Warm border */
+  /* Tuned for contrast while keeping "Gold" look */
+  --color-brand-primary: #CA8A04;
+  /* Darker Gold (Yellow-600) */
+  --color-success: #15803d;
+  /* Strong Green (Green-700) for contrast on white */
+
+  --color-border: rgba(202, 138, 4, 0.25);
+  /* Stronger Warm border */
   --glass-border: 1px solid var(--color-border);
 
-  /* REMOVE BLACK HAZE - Use Gold/Warm shadows */
-  --glass-shadow: 0 8px 32px rgba(217, 164, 88, 0.12);
-  --shadow-button: 0 4px 15px rgba(217, 164, 88, 0.4);
+  /* REMOVE BLACK HAZE - Use Gold/Warm shadows + White Inset Rim */
+  --glass-shadow: 0 8px 32px rgba(202, 138, 4, 0.15), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  --shadow-button: 0 4px 15px rgba(202, 138, 4, 0.4);
 
-  --glow-primary: 0 0 25px rgba(217, 164, 88, 0.6);
+  --glow-primary: 0 0 25px rgba(202, 138, 4, 0.5);
   /* Brighter glow */
 
-  /* Punchier Gradient */
-  --gradient-text: linear-gradient(135deg, #C16A53 10%, #D9A458 100%);
-  --gradient-orbit: linear-gradient(135deg, #FFD166 0%, #E07A5F 100%);
-  /* Vibrant Yellow -> Terracotta */
+  /* iOS Nav Glass - Light Mode - SUPER TRANSLUCENT */
+  --nav-bg: rgba(255, 255, 255, 0.4);
+  /* Crystal Clear Frost */
+  --nav-border: 1px solid rgba(255, 255, 255, 0.6);
+  /* White icy rim */
+
+  /* Double shadow: Soft gold drop + crisp white inset rim */
+  --nav-shadow: 0 4px 30px rgba(0, 0, 0, 0.05), inset 0 0 0 1px rgba(255, 255, 255, 0.8);
+  --nav-blur: blur(40px) saturate(200%);
+
+  /* Punchier Gradient using darker gold */
+  --gradient-text: linear-gradient(135deg, #9A3412 10%, #CA8A04 100%);
+  --gradient-orbit: linear-gradient(135deg, #F59E0B 0%, #EA580C 100%);
+  /* Amber-500 -> Orange-600 */
 }
 
 * {
@@ -113,6 +142,33 @@ h6 {
   background-clip: text;
 }
 
+/* Adaptive Logo Text */
+.text-orbit-logo {
+  background: var(--gradient-text);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+[data-theme='light'] .text-orbit-logo {
+  background: linear-gradient(135deg, #1F2937 0%, #F59E0B 15%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  /* Stronger Pop: Double Drop Shadow (Amber + Orange) */
+  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.6)) drop-shadow(0 0 20px rgba(234, 88, 12, 0.3));
+}
+
+.img-orbit-logo {
+  filter: drop-shadow(0 0 12px rgba(217, 164, 88, 0.3));
+  transition: filter 0.3s ease;
+}
+
+[data-theme='light'] .img-orbit-logo {
+  /* Matching double glow from text */
+  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.6)) drop-shadow(0 0 15px rgba(234, 88, 12, 0.4));
+}
+
 /* Glassmorphism Utilities */
 .glass-panel {
   background: var(--color-bg-card);
@@ -123,10 +179,12 @@ h6 {
 }
 
 .glass-nav {
-  background: rgba(5, 5, 5, 0.7);
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
-  border-top: var(--glass-border);
+  background: var(--nav-bg);
+  backdrop-filter: var(--nav-blur);
+  -webkit-backdrop-filter: var(--nav-blur);
+  border: var(--nav-border);
+  box-shadow: var(--nav-shadow);
+  transition: all 0.3s ease;
 }
 
 /* Animation Utilities */

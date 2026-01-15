@@ -15,13 +15,21 @@ import SplashScreen from './components/SplashScreen';
 import VoiceAssistant from './components/VoiceAssistant';
 
 function App() {
+  // Helper for persistence
+  const getStored = (key, def) => {
+    try {
+      const saved = localStorage.getItem(key);
+      return saved ? JSON.parse(saved) : def;
+    } catch { return def; }
+  };
+
   const [showSplash, setShowSplash] = useState(true);
-  const [hasOnboarded, setHasOnboarded] = useState(false);
-  const [userData, setUserData] = useState(null);
+  const [hasOnboarded, setHasOnboarded] = useState(() => getStored('orbit_hasOnboarded', false));
+  const [userData, setUserData] = useState(() => getStored('orbit_userData', null));
   const [currentTab, setCurrentTab] = useState('home');
   const [theme, setTheme] = useState('dark');
-  const [upcomingRide, setUpcomingRide] = useState(null); // Start empty to test flow
-  const [pastRides, setPastRides] = useState([
+  const [upcomingRide, setUpcomingRide] = useState(() => getStored('orbit_upcomingRide', null));
+  const [pastRides, setPastRides] = useState(() => getStored('orbit_pastRides', [
     {
       id: 2,
       date: 'Yesterday',
@@ -46,7 +54,13 @@ function App() {
       cost: 45,
       saved: 20
     }
-  ]);
+  ]));
+
+  // Persistence Effects
+  useEffect(() => { localStorage.setItem('orbit_hasOnboarded', JSON.stringify(hasOnboarded)); }, [hasOnboarded]);
+  useEffect(() => { localStorage.setItem('orbit_userData', JSON.stringify(userData)); }, [userData]);
+  useEffect(() => { localStorage.setItem('orbit_upcomingRide', JSON.stringify(upcomingRide)); }, [upcomingRide]);
+  useEffect(() => { localStorage.setItem('orbit_pastRides', JSON.stringify(pastRides)); }, [pastRides]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);

@@ -45,7 +45,7 @@ const Profile = ({ userData, toggleRole, toggleTheme, currentTheme, onLogout }) 
                         {[
                             {
                                 category: 'Navigation',
-                                icon: <MapPin size={18} color="#4ade80" />,
+                                icon: <MapPin size={18} color="var(--color-success)" />,
                                 commands: [
                                     { phrase: "Go Home", desc: "Open Dashboard" },
                                     { phrase: "Open Rides", desc: "View History/Lists" },
@@ -77,7 +77,7 @@ const Profile = ({ userData, toggleRole, toggleTheme, currentTheme, onLogout }) 
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                     {section.commands.map((cmd, i) => (
-                                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: i !== section.commands.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', paddingBottom: i !== section.commands.length - 1 ? '12px' : '0' }}>
+                                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: i !== section.commands.length - 1 ? '1px solid var(--color-border)' : 'none', paddingBottom: i !== section.commands.length - 1 ? '12px' : '0' }}>
                                             <span style={{ fontWeight: '600', color: 'var(--color-brand-secondary)' }}>"{cmd.phrase}"</span>
                                             <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>{cmd.desc}</span>
                                         </div>
@@ -109,8 +109,8 @@ const Profile = ({ userData, toggleRole, toggleTheme, currentTheme, onLogout }) 
                     boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
                 }}>
                     {/* Fallback to User icon if image load logic is complex, but here we try basic logic */}
-                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#2a3b55' }}>
-                        <span style={{ fontSize: '2.5rem', fontWeight: '900', color: 'rgba(255,255,255,0.2)' }}>
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-bg-card-hover)' }}>
+                        <span style={{ fontSize: '2.5rem', fontWeight: '900', color: 'var(--color-text-secondary)' }}>
                             {userData?.name ? userData.name.charAt(0).toUpperCase() : 'U'}
                         </span>
                     </div>
@@ -209,7 +209,7 @@ const Profile = ({ userData, toggleRole, toggleTheme, currentTheme, onLogout }) 
                 <div style={{ height: '1px', background: 'var(--color-bg-card-hover)' }} />
                 <MenuItem
                     icon={ShieldCheck}
-                    iconColor="#4ade80"
+                    iconColor="var(--color-success)"
                     label="Security & Privacy"
                     onClick={() => setActiveSubScreen('security')}
                 />
