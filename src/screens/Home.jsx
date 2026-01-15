@@ -176,6 +176,12 @@ const Home = ({ userData, onRideComplete, upcomingRide, setUpcomingRide }) => {
         }, 600);
     };
 
+    const handleCancelRide = () => {
+        playClickSound('destructive');
+        if (setUpcomingRide) setUpcomingRide(null);
+        setJoinedRide(null); // Immediate feedback
+    };
+
     /* -------------------------------------------------------------------------- */
     /*                                DRIVER VIEW                                 */
     /* -------------------------------------------------------------------------- */
@@ -756,11 +762,7 @@ const Home = ({ userData, onRideComplete, upcomingRide, setUpcomingRide }) => {
         }, 3200); // 3.2s for full animation sequence
     };
 
-    const handleCancelRide = () => {
-        playClickSound('destructive');
-        if (setUpcomingRide) setUpcomingRide(null);
-        setJoinedRide(null); // Immediate feedback
-    };
+
 
     // If rider has joined a ride, show joined ride view
     if (joinedRide) {
